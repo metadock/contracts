@@ -1,18 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import { IModule } from "./../interfaces/IModule.sol";
+import { IInvoiceModule } from "./interfaces/IInvoiceModule.sol";
 import { IERC165 } from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
-import { InvoiceModuleTypes } from "./../libraries/InvoiceModuleTypes.sol";
-import { IContainer } from "./../interfaces/IContainer.sol";
+import { Types } from "./libraries/Types.sol";
+import { IContainer } from "./../../interfaces/IContainer.sol";
 
-contract InvoiceModule is IModule {
+contract InvoiceModule is IInvoiceModule {
     mapping(address container => uint256[]) internal _invoicesOf;
-    mapping(uint256 id => InvoiceModuleTypes.Invoice) internal _invoices;
+    mapping(uint256 id => Types.Invoice) internal _invoices;
 
-    uint256 _nextInvoiceId;
-
-    event InvoiceCreated(uint256 indexed invoiceId, InvoiceModuleTypes.Invoice invoice);
+    uint256 private _nextInvoiceId;
 
     error NotContainer();
     error InvalidPayer();
@@ -25,28 +23,25 @@ contract InvoiceModule is IModule {
         _;
     }
 
-    function createInvoice(
-        InvoiceModuleTypes.Invoice calldata invoice
-    ) external onlyContainer returns (uint256 invoiceId) {
+    function createInvoice(Types.Invoice calldata invoice) external onlyContainer returns (uint256 invoiceId) {
         // @todo add input sanitization
         // Checks: invoice values
         if (invoice.payer == address(0)) revert InvalidPayer();
-        if (invoice.frequency == InvoiceModuleTypes.Frequency.Recurring && invoice.startTime == 0)
-            revert InvalidTimeInterval();
-        if (invoice.frequency == InvoiceModuleTypes.Frequency.Recurring && invoice.startTime >= invoice.endTime)
+        if (invoice.frequency == Types.Frequency.Recurring && invoice.startTime == 0) revert InvalidTimeInterval();
+        if (invoice.frequency == Types.Frequency.Recurring && invoice.startTime >= invoice.endTime)
             revert InvalidTimeInterval();
 
         // Get the next invoice id
         invoiceId = _nextInvoiceId;
 
         // Effects: create the invoice
-        _invoices[invoiceId] = InvoiceModuleTypes.Invoice({
+        _invoices[invoiceId] = Types.Invoice({
             status: invoice.status,
             frequency: invoice.frequency,
             startTime: invoice.startTime,
             endTime: invoice.endTime,
             payer: invoice.payer,
-            payment: InvoiceModuleTypes.Payment({
+            payment: Types.Payment({
                 recurrence: invoice.payment.recurrence,
                 method: invoice.payment.method,
                 amount: invoice.payment.amount,
@@ -66,7 +61,7 @@ contract InvoiceModule is IModule {
         emit InvoiceCreated({ invoiceId: invoiceId, invoice: invoice });
     }
 
-    function getInvoice(uint256 invoiceId) external view returns (InvoiceModuleTypes.Invoice memory invoice) {
+    function getInvoice(uint256 invoiceId) external view returns (Types.Invoice memory invoice) {
         return _invoices[invoiceId];
     }
 
