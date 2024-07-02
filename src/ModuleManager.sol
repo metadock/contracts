@@ -2,24 +2,43 @@
 pragma solidity ^0.8.26;
 
 import { IModuleManager } from "./interfaces/IModuleManager.sol";
-import { IModule } from "./interfaces/IModule.sol";
 
+/// @title ModuleManager
+/// @notice See the documentation in {IModuleManager}
 contract ModuleManager is IModuleManager {
-    mapping(IModule module => bool) public override isModuleEnabled;
+    /*//////////////////////////////////////////////////////////////////////////
+                                  PUBLIC STORAGE
+    //////////////////////////////////////////////////////////////////////////*/
 
-    event ModuleEnabled(IModule indexed module);
+    /// @inheritdoc IModuleManager
+    mapping(address module => bool) public override isModuleEnabled;
 
-    constructor(IModule[] memory _initialModules) {
+    /*//////////////////////////////////////////////////////////////////////////
+                                    CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Initializes the `_initialModules` initial module(s) enabled on a container
+    constructor(address[] memory _initialModules) {
         _enableBatchModules(_initialModules);
     }
 
-    function enableModule(IModule module) public {
+    /*//////////////////////////////////////////////////////////////////////////
+                                NON-CONSTANT FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc IModuleManager
+    function enableModule(address module) public virtual {
         isModuleEnabled[module] = true;
 
         emit ModuleEnabled({ module: module });
     }
 
-    function _enableBatchModules(IModule[] memory modules) internal {
+    /*//////////////////////////////////////////////////////////////////////////
+                                INTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Enables multiple modules at the same time
+    function _enableBatchModules(address[] memory modules) internal {
         for (uint256 i; i < modules.length; ++i) {
             enableModule(modules[i]);
         }

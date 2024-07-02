@@ -1,18 +1,31 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import { IModule } from "./IModule.sol";
-
 interface IModuleManager {
+    /*//////////////////////////////////////////////////////////////////////////
+                                       EVENTS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when a module is enabled on the container
+    /// @param module The address of the enabled module
+    event ModuleEnabled(address indexed module);
+
+    /// @notice Emitted when a module is disabled on the container
+    /// @param module The address of the disabled module
+    event ModuleDisabled(address indexed module);
+
     /*//////////////////////////////////////////////////////////////////////////
                                  CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    function isModuleEnabled(IModule module) external view returns (bool isEnabled);
+    /// @notice Checks whether the `module` module is enabled on the container
+    function isModuleEnabled(address module) external view returns (bool isEnabled);
 
     /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    function enableModule(IModule module) external;
+    /// @notice Enables a module deployed at `module` address
+    /// @param module The address of the module to enable
+    function enableModule(address module) external;
 }
