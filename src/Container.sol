@@ -36,7 +36,7 @@ contract Container is IContainer, ModuleManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Initializes the address of the container owner and enables the initial module(s)
-    constructor(address _owner, IModule[] memory _initialModules) ModuleManager(_initialModules) {
+    constructor(address _owner, address[] memory _initialModules) ModuleManager(_initialModules) {
         owner = _owner;
     }
 
@@ -55,7 +55,7 @@ contract Container is IContainer, ModuleManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IContainer
-    function enableModule(address module) public override onlyOwner {
+    function enableModule(address module) public override(IContainer, ModuleManager) onlyOwner {
         super.enableModule(module);
     }
 
