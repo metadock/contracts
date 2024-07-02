@@ -33,19 +33,17 @@ library Types {
     enum Status {
         Active,
         Paid,
-        Expired,
-        Canceled,
-        Rejected
+        Canceled
     }
 
     struct Invoice {
         // slot 0
+        address recipient;
+        // slot 1
         Status status; // 1 byte
         Frequency frequency; // 1 byte
         uint40 startTime; // 5 bytes
         uint40 endTime; // 5 bytes
-        // slot 1
-        address payer; // 32 bytes
         // slot 2, 3 and 4
         Payment payment;
     }
