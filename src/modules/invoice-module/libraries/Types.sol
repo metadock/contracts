@@ -2,9 +2,11 @@
 pragma solidity ^0.8.26;
 
 library Types {
+    // frequency: recurring between 1 January - 1 March (2 months)
+    // recurrence: weekly
+    // method: transfer
     enum Recurrence {
         OneTime,
-        Daily,
         Weekly,
         Monthly,
         Yearly
@@ -19,10 +21,9 @@ library Types {
         // slot 0
         Method method;
         Recurrence recurrence;
+        address asset;
         // slot 1
         uint256 amount;
-        // slot 2
-        address asset;
     }
 
     enum Frequency {
@@ -39,12 +40,11 @@ library Types {
     struct Invoice {
         // slot 0
         address recipient;
-        // slot 1
-        Status status; // 1 byte
-        Frequency frequency; // 1 byte
-        uint40 startTime; // 5 bytes
-        uint40 endTime; // 5 bytes
-        // slot 2, 3 and 4
+        Status status;
+        Frequency frequency;
+        uint40 startTime;
+        uint40 endTime;
+        // slot 1 and 2
         Payment payment;
     }
 }
