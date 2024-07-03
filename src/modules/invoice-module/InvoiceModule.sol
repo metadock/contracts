@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { Types } from "./libraries/Types.sol";
 import { Errors } from "./libraries/Errors.sol";
 import { IInvoiceModule } from "./interfaces/IInvoiceModule.sol";
 import { IContainer } from "./../../interfaces/IContainer.sol";
 
+/// @title InvoiceModule
+/// @notice See the documentation in {IInvoiceModule}
 contract InvoiceModule is IInvoiceModule {
     using SafeERC20 for IERC20;
 
@@ -32,7 +34,8 @@ contract InvoiceModule is IInvoiceModule {
 
     /// @dev Allow only calls from contracts implementing the {IContainer} interface
     modifier onlyContainer() {
-        if (!IERC165(msg.sender).supportsInterface(type(IContainer).interfaceId)) revert Errors.NotContainer();
+        bytes4 interfaceId = type(IContainer).interfaceId;
+        if (!IERC165(msg.sender).supportsInterface(interfaceId)) revert Errors.NotContainer();
         _;
     }
 
@@ -51,12 +54,29 @@ contract InvoiceModule is IInvoiceModule {
 
     /// @inheritdoc IInvoiceModule
     function createInvoice(Types.Invoice calldata invoice) external onlyContainer returns (uint256 id) {
-        // @todo add input sanitization
-        // Checks: invoice values
-        if (invoice.frequency == Types.Frequency.Recurring && invoice.startTime == 0)
-            revert Errors.InvalidTimeInterval();
-        if (invoice.frequency == Types.Frequency.Recurring && invoice.startTime >= invoice.endTime)
-            revert Errors.InvalidTimeInterval();
+        // Checks: validate the input parameters if the invoice must be paid in even transfers
+        if (invoice.payment.method == Types.Method.Transfer) {
+            // Checks: the amount is non-zero
+            if (invoice.payment.amount == 0) {
+                revert Errors.PaymentAmountZero();
+            }
+
+            // Checks: end time is not in the past
+            uint40 currentTime = uint40(block.timestamp);
+            if (currentTime >= invoice.endTime) {
+                revert Errors.EndTimeLowerThanCurrentTime();
+            }
+
+            // Checks: validate the input parameters if the invoice is recurring
+            if (invoice.frequency == Types.Frequency.Recurring) {
+                _checkRecurringTransferInvoiceParams({
+                    recurrence: invoice.payment.recurrence,
+                    paymentsLeft: invoice.payment.paymentsLeft,
+                    startTime: invoice.startTime,
+                    endTime: invoice.endTime
+                });
+            }
+        }
 
         // Get the next invoice ID
         id = _nextInvoiceId;
@@ -71,6 +91,7 @@ contract InvoiceModule is IInvoiceModule {
             payment: Types.Payment({
                 recurrence: invoice.payment.recurrence,
                 method: invoice.payment.method,
+                paymentsLeft: invoice.payment.paymentsLeft,
                 amount: invoice.payment.amount,
                 asset: invoice.payment.asset
             })
@@ -90,23 +111,40 @@ contract InvoiceModule is IInvoiceModule {
 
     /// @inheritdoc IInvoiceModule
     function payInvoice(uint256 id) external payable {
+        // Load the invoice from storage
         Types.Invoice memory invoice = _invoices[id];
 
-        // Checks: the invoice is valid as all invoices must have the `endTime` field defined
-        if (invoice.endTime == 0) revert Errors.InvalidInvoiceId();
-
-        // Checks: the invoice is already paid or canceled
-        if (invoice.status != Types.Status.Active)
+        // Checks: the invoice is not already paid or canceled
+        if (invoice.status != Types.Status.Active) {
             revert Errors.InvalidInvoiceStatus({ currentStatus: invoice.status });
+        }
 
         // Checks: the payment type is different than transfer
         if (invoice.payment.method != Types.Method.Transfer) revert Errors.InvalidPaymentType();
 
-        // Effects: update the invoice status to `Paid`
-        _invoices[id].status = Types.Status.Paid;
+        // Effects: update the invoice status to `Paid` if this is a one-off invoice or
+        // if the invoice is recurring and the required number of payments has been made
+        if (invoice.frequency == Types.Frequency.Regular) {
+            _invoices[id].status = Types.Status.Paid;
+        } else {
+            // Using unchecked because the number of payments left cannot underflow as the invoice status
+            // will be updated to `Paid` once `paymentLeft` is zero and this branch will not be
+            unchecked {
+                uint24 paymentsLeft = invoice.payment.paymentsLeft - 1;
+                _invoices[id].payment.paymentsLeft = paymentsLeft;
+                if (paymentsLeft == 0) {
+                    _invoices[id].status = Types.Status.Paid;
+                }
+            }
+        }
 
-        // Checks: the payment must be done in native token (ETH) or an ERC-20 token
+        // Check if the payment must be done in native token (ETH) or an ERC-20 token
         if (invoice.payment.asset == address(0)) {
+            // Checks: the paid amount matches the invoice value
+            if (msg.value < invoice.payment.amount) {
+                revert Errors.InvalidPaymentAmount({ amount: invoice.payment.amount });
+            }
+
             // Interactions: pay the recipient with native token (ETH)
             (bool success, ) = payable(invoice.recipient).call{ value: invoice.payment.amount }("");
             if (!success) revert Errors.PaymentFailed();
@@ -116,6 +154,50 @@ contract InvoiceModule is IInvoiceModule {
                 to: address(invoice.recipient),
                 value: invoice.payment.amount
             });
+        }
+
+        emit InvoicePaid({ id: id, payer: msg.sender });
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      HELPERS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Validates the input parameters if the invoice is recurring and must be paid in even transfers
+    function _checkRecurringTransferInvoiceParams(
+        Types.Recurrence recurrence,
+        uint40 paymentsLeft,
+        uint40 startTime,
+        uint40 endTime
+    ) internal pure {
+        // Checks: the invoice interval if valid
+        if (startTime < endTime) {
+            revert Errors.StartTimeGreaterThanEndTime();
+        }
+
+        // Calculate the expected number of payments based on the invoice recurrence and payment interval
+        uint40 numberOfPayments = _computeNumberOfRecurringPayments(recurrence, startTime, endTime);
+
+        // Checks: the specified number of payments is valid
+        if (paymentsLeft != numberOfPayments) {
+            revert Errors.InvalidNumberOfPayments({ expectedNumber: numberOfPayments });
+        }
+    }
+
+    /// @dev Calculates the number of payments that must be done for a Recurring invoice that must be paid in transfers
+    function _computeNumberOfRecurringPayments(
+        Types.Recurrence recurrence,
+        uint40 startTime,
+        uint40 endTime
+    ) internal pure returns (uint40 numberOfPayments) {
+        uint40 interval = endTime - startTime;
+
+        if (recurrence == Types.Recurrence.Weekly) {
+            numberOfPayments = interval / 1 weeks;
+        } else if (recurrence == Types.Recurrence.Monthly) {
+            numberOfPayments = interval / 4 weeks;
+        } else if (recurrence == Types.Recurrence.Yearly) {
+            numberOfPayments = interval / 48 weeks;
         }
     }
 }

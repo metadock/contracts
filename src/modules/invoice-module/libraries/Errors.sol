@@ -8,9 +8,13 @@ import { Types } from "./Types.sol";
 library Errors {
     error NotContainer();
     error InvalidPayer();
-    error InvalidInvoiceId();
-    error InvalidTimeInterval();
+    error InvalidOrExpiredInvoice();
+    error EndTimeLowerThanCurrentTime();
+    error StartTimeGreaterThanEndTime();
     error InvalidPaymentType();
+    error PaymentAmountZero();
+    error InvalidPaymentAmount(uint256 amount);
     error PaymentFailed();
     error InvalidInvoiceStatus(Types.Status currentStatus);
+    error InvalidNumberOfPayments(uint40 expectedNumber);
 }
