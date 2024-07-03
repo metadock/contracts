@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+/// @title IModuleManager
+/// @notice Contract that provides functionalities to manage multiple modules within a {Container} contract
 interface IModuleManager {
     /*//////////////////////////////////////////////////////////////////////////
                                        EVENTS
@@ -25,7 +27,7 @@ interface IModuleManager {
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Enables a module deployed at `module` address
+    /// @notice Enables the `module` module on the {ModuleManager} contract
     /// @param module The address of the module to enable
     function enableModule(address module) external;
 }

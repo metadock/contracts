@@ -2,6 +2,7 @@
 pragma solidity ^0.8.26;
 
 import { IModuleManager } from "./interfaces/IModuleManager.sol";
+import { Errors } from "./libraries/Errors.sol";
 
 /// @title ModuleManager
 /// @notice See the documentation in {IModuleManager}
@@ -28,8 +29,15 @@ contract ModuleManager is IModuleManager {
 
     /// @inheritdoc IModuleManager
     function enableModule(address module) public virtual {
+        // Check: invalid module due to zero-code size
+        if (module.code.length == 0) {
+            revert Errors.InvalidModule();
+        }
+
+        // Effect: enable the module
         isModuleEnabled[module] = true;
 
+        // Log the module enablement
         emit ModuleEnabled({ module: module });
     }
 
