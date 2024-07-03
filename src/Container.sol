@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+
 import { IContainer } from "./interfaces/IContainer.sol";
 import { ModuleManager } from "./ModuleManager.sol";
 import { IModuleManager } from "./interfaces/IModuleManager.sol";
 import { Errors } from "./libraries/Errors.sol";
-import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
 
 /// @title Container
 /// @notice See the documentation in {IContainer}
@@ -55,36 +56,52 @@ contract Container is IContainer, ModuleManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IContainer
-    function enableModule(address module) public override(IContainer, ModuleManager) onlyOwner {
-        super.enableModule(module);
-    }
+    function execute(address module, uint256 value, bytes memory data) external onlyOwner returns (bool _success) {
+        // Allocate all the gas to the executed module method
+        uint256 txGas = gasleft();
 
-    /// @inheritdoc IContainer
-    function execute(address module, uint256 value, bytes memory data) external onlyOwner returns (bool success) {
-        uint256 txGas = type(uint256).max;
+        // Execute the call via assembly to avoid returnbomb attacks
+        // See https://github.com/nomad-xyz/ExcessivelySafeCall
+        //
+        // Do not account for the returned data but only for the `_success` boolean
         assembly {
-            success := call(txGas, module, value, add(data, 0x20), mload(data), 0, 0)
+            // See https://www.evm.codes/#f1?fork=cancun
+            _success := call(txGas, module, value, add(data, 0x20), mload(data), 0, 0)
         }
 
-        if (success) emit ModuleExecutionSucceded(module, value, data);
+        // Log the corresponding event whether the call was successful or not
+        if (_success) emit ModuleExecutionSucceded(module, value, data);
         else emit ModuleExecutionFailed(module, value, data);
     }
 
     /// @inheritdoc IContainer
     function depositERC20(IERC20 asset, uint256 amount) external {
+        // Checks: against the non-zero token address
+        if (address(asset) == address(0)) {
+            revert Errors.InvalidAssetZeroAddress();
+        }
+
+        // Checks: the amount is non-zero
+        if (amount == 0) {
+            revert Errors.InvalidAssetZeroAmount();
+        }
+
+        // Interactions: deposit by transferring the amount to the container address
         asset.safeTransferFrom({ from: msg.sender, to: address(this), value: amount });
 
+        // Log the successful deposit
         emit AssetDeposited({ sender: msg.sender, asset: address(asset), amount: amount });
     }
 
     /// @inheritdoc IContainer
     function withdrawERC20(IERC20 asset, uint256 amount) external onlyOwner {
-        // Checks: the ERC20 balance of the container minus the amount locked for operations is greater than the requested amount
+        // Checks: the available ERC20 balance of the container is greater enough to support the withdrawal
         if (amount > asset.balanceOf(address(this)) - erc20Locked[asset]) revert Errors.InsufficientNativeToWithdraw();
 
-        // Effects: withdraw to sender
+        // Interactions: withdraw by transferring the amount to the sender
         asset.safeTransferFrom({ from: address(this), to: msg.sender, value: amount });
 
+        // Log the successful ERC-20 token withdrawal
         emit AssetWithdrawn({ sender: msg.sender, asset: address(asset), amount: amount });
     }
 
@@ -93,13 +110,23 @@ contract Container is IContainer, ModuleManager {
         // Checks: the native balance of the container minus the amount locked for operations is greater than the requested amount
         if (amount > address(this).balance - nativeLocked) revert Errors.InsufficientNativeToWithdraw();
 
-        // Effects: withdraw to sender
+        // Interactions: withdraw by transferring the amount to the sender
         (bool success, ) = payable(msg.sender).call{ value: amount }("");
+        // Revert if the call failed
         if (!success) revert Errors.NativeWithdrawFailed();
+
+        // Log the successful native token withdrawal
+        emit AssetWithdrawn({ sender: msg.sender, asset: address(0), amount: amount });
+    }
+
+    /// @inheritdoc IModuleManager
+    function enableModule(address module) public override onlyOwner {
+        super.enableModule(module);
     }
 
     /// @dev Allow container to receive native token (ETH)
     receive() external payable {
+        // Log the successful native token deposit
         emit AssetDeposited({ sender: msg.sender, asset: address(0), amount: msg.value });
     }
 

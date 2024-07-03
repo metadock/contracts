@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
+/// @title IContainer
+/// @notice Contract that provides functionalities to store native token (ETH) value and any ERC-20 tokens, allowing
+/// external modules to be executed by extending its core functionalities
 interface IContainer is IERC165 {
     /*//////////////////////////////////////////////////////////////////////////
                                        EVENTS
@@ -48,14 +51,6 @@ interface IContainer is IERC165 {
     /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
-
-    /// @notice Enables the `module` module on the container
-    ///
-    /// Requirements:
-    /// - `msg.sender` must be the owner of the container contract
-    ///
-    /// @param module The address of the module to enabled
-    function enableModule(address module) external;
 
     /// @notice Executes a call on the `module` module, proving the `value` wei amount for the ABI-encoded `data` method
     /// @param module The address of the module to call

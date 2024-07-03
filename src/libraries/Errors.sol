@@ -8,4 +8,7 @@ library Errors {
     error NativeWithdrawFailed();
     error InsufficientNativeToWithdraw();
     error InsufficientERC20ToWithdraw();
+    error InvalidModule();
+    error InvalidAssetZeroAddress();
+    error InvalidAssetZeroAmount();
 }
