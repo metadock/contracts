@@ -56,7 +56,11 @@ contract Container is IContainer, ModuleManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IContainer
-    function execute(address module, uint256 value, bytes memory data) external onlyOwner returns (bool _success) {
+    function execute(
+        address module,
+        uint256 value,
+        bytes memory data
+    ) external onlyOwner onlyEnabledModule(module) returns (bool _success) {
         // Allocate all the gas to the executed module method
         uint256 txGas = gasleft();
 
