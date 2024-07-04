@@ -59,7 +59,7 @@ contract ModuleManager is IModuleManager {
     function _enableModule(address module) internal {
         // Check: invalid module due to zero-code size
         if (module.code.length == 0) {
-            revert Errors.InvalidModule();
+            revert Errors.InvalidZeroCodeModule();
         }
 
         // Effect: enable the module
