@@ -31,7 +31,7 @@ library Errors {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Thrown when the requested module to be enabled is not a contract
-    error InvalidModule();
+    error InvalidZeroCodeModule();
 
     /// @notice Thrown when a container tries to execute a method on a non-enabled module
     error ModuleNotEnabled();
