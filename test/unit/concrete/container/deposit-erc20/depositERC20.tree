@@ -1,0 +1,9 @@
+depositERC20.t.sol
+├── when the address is the zero address
+│   └── it should revert with the {InvalidAssetZeroAddress} error
+└── when the address is not the zero address
+    ├── when the amount is zero 
+    │   └── it should revert with the {InvalidAssetZeroAmount} error
+    └── when the amount is greater than zero
+        ├── it should transfer the tokens to the container
+        └── it should emit an {AssetDeposited} event

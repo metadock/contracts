@@ -54,13 +54,13 @@ contract InvoiceModule is IInvoiceModule {
 
     /// @inheritdoc IInvoiceModule
     function createInvoice(Types.Invoice calldata invoice) external onlyContainer returns (uint256 id) {
+        // Checks: the amount is non-zero
+        if (invoice.payment.amount == 0) {
+            revert Errors.PaymentAmountZero();
+        }
+
         // Checks: validate the input parameters if the invoice must be paid in even transfers
         if (invoice.payment.method == Types.Method.Transfer) {
-            // Checks: the amount is non-zero
-            if (invoice.payment.amount == 0) {
-                revert Errors.PaymentAmountZero();
-            }
-
             // Checks: end time is not in the past
             uint40 currentTime = uint40(block.timestamp);
             if (currentTime >= invoice.endTime) {

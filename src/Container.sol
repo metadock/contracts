@@ -56,7 +56,11 @@ contract Container is IContainer, ModuleManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IContainer
-    function execute(address module, uint256 value, bytes memory data) external onlyOwner returns (bool _success) {
+    function execute(
+        address module,
+        uint256 value,
+        bytes memory data
+    ) external onlyOwner onlyEnabledModule(module) returns (bool _success) {
         // Allocate all the gas to the executed module method
         uint256 txGas = gasleft();
 
@@ -96,10 +100,10 @@ contract Container is IContainer, ModuleManager {
     /// @inheritdoc IContainer
     function withdrawERC20(IERC20 asset, uint256 amount) external onlyOwner {
         // Checks: the available ERC20 balance of the container is greater enough to support the withdrawal
-        if (amount > asset.balanceOf(address(this)) - erc20Locked[asset]) revert Errors.InsufficientNativeToWithdraw();
+        if (amount > asset.balanceOf(address(this)) - erc20Locked[asset]) revert Errors.InsufficientERC20ToWithdraw();
 
         // Interactions: withdraw by transferring the amount to the sender
-        asset.safeTransferFrom({ from: address(this), to: msg.sender, value: amount });
+        asset.safeTransfer({ to: msg.sender, value: amount });
 
         // Log the successful ERC-20 token withdrawal
         emit AssetWithdrawn({ sender: msg.sender, asset: address(asset), amount: amount });
