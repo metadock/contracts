@@ -19,6 +19,7 @@ contract Receive_Unit_Concrete_Test is Container_Unit_Concrete_Test {
 
         // Run the test
         (bool success, ) = address(container).call{ value: 1 ether }("");
+        if (!success) revert();
 
         // Assert the {Container} contract balance
         assertEq(address(container).balance, 1 ether);
