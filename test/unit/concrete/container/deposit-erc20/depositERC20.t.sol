@@ -14,7 +14,7 @@ contract DepositERC20_Unit_Concrete_Test is Container_Unit_Concrete_Test {
         vm.startPrank({ msgSender: users.bob });
 
         // Approve the {Container} contract to spend USDT tokens on behalf of Bob
-        usdt.approve({ spender: address(container), amount: 1000000e16 });
+        usdt.approve({ spender: address(container), amount: 1000000e6 });
     }
 
     function test_RevertWhen_AssetZeroAddress() external {
@@ -41,7 +41,10 @@ contract DepositERC20_Unit_Concrete_Test is Container_Unit_Concrete_Test {
         _;
     }
 
-    function test_Execute() external whenAssetNonZeroAddress whenAssetGtZeroAmount {
+    function test_DepositERC20() external whenAssetNonZeroAddress whenAssetGtZeroAmount {
+        // Store the USDT balance of Bob before the deposit
+        uint256 balanceOfBobBefore = usdt.balanceOf(users.bob);
+
         // Expect the {ModuleExecutionSucceded} event to be emitted
         vm.expectEmit();
         emit Events.AssetDeposited({ sender: users.bob, asset: address(usdt), amount: 100e6 });
@@ -50,7 +53,11 @@ contract DepositERC20_Unit_Concrete_Test is Container_Unit_Concrete_Test {
         container.depositERC20({ asset: IERC20(address(usdt)), amount: 100e6 });
 
         // Assert the USDT balance of the {Container} contract
-        uint256 actualBalanceOf = usdt.balanceOf(address(container));
-        assertEq(actualBalanceOf, 100e6);
+        uint256 actualBalanceOfContainer = usdt.balanceOf(address(container));
+        assertEq(actualBalanceOfContainer, 100e6);
+
+        // Assert the USDT balance of Bob after the deposit
+        uint256 actualBalanceOfBob = usdt.balanceOf(users.bob);
+        assertEq(actualBalanceOfBob, balanceOfBobBefore - 100e6);
     }
 }
