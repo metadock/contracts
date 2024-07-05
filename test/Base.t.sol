@@ -5,6 +5,7 @@ import { Events } from "./utils/Events.sol";
 import { Users } from "./utils/Types.sol";
 import { Test } from "forge-std/Test.sol";
 import { MockERC20NoReturn } from "./mocks/MockERC20NoReturn.sol";
+import { MockModule } from "./mocks/MockModule.sol";
 import { Container } from "./../src/Container.sol";
 import { InvoiceModule } from "./../src/modules/invoice-module/InvoiceModule.sol";
 
@@ -22,6 +23,7 @@ abstract contract Base_Test is Test, Events {
     InvoiceModule internal invoiceModule;
     Container internal container;
     MockERC20NoReturn internal usdt;
+    MockModule internal mockModule;
 
     /*//////////////////////////////////////////////////////////////////////////
                                   SET-UP FUNCTION
@@ -31,6 +33,7 @@ abstract contract Base_Test is Test, Events {
         // Deploy test contracts
         usdt = new MockERC20NoReturn("Tether USD", "USDT", 6);
         invoiceModule = new InvoiceModule();
+        mockModule = new MockModule();
 
         // Label the test contracts so we can easily track them
         vm.label({ account: address(usdt), newLabel: "USDT" });
