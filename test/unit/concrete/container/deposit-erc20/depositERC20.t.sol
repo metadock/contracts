@@ -45,7 +45,7 @@ contract DepositERC20_Unit_Concrete_Test is Container_Unit_Concrete_Test {
         // Store the USDT balance of Bob before the deposit
         uint256 balanceOfBobBefore = usdt.balanceOf(users.bob);
 
-        // Expect the {ModuleExecutionSucceded} event to be emitted
+        // Expect the {AssetDeposited} event to be emitted
         vm.expectEmit();
         emit Events.AssetDeposited({ sender: users.bob, asset: address(usdt), amount: 100e6 });
 

@@ -49,7 +49,7 @@ contract WithdrawERC20_Unit_Concrete_Test is Container_Unit_Concrete_Test {
         // Store the USDT balance of Eve before withdrawal
         uint256 balanceOfEveBefore = usdt.balanceOf(users.eve);
 
-        // Expect the {ModuleExecutionSucceded} event to be emitted
+        // Expect the {AssetWithdrawn} event to be emitted
         vm.expectEmit();
         emit Events.AssetWithdrawn({ sender: users.eve, asset: address(usdt), amount: 10e6 });
 
