@@ -6,7 +6,8 @@ import { Types } from "./Types.sol";
 /// @title Errors
 /// @notice Library containing all custom errors the {InvoiceModule} may revert with
 library Errors {
-    error NotContainer();
+    error ContainerZeroCodeSize();
+    error ContainerUnsupportedInterface();
     error InvalidPayer();
     error InvalidOrExpiredInvoice();
     error EndTimeLowerThanCurrentTime();
