@@ -1,66 +1,23 @@
-## Foundry
+<h1 align="center">MetaDock Contracts</h1>
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+<p align="center">
+    <strong>Smart contracts built for the MetaDock platform.</strong>
+</p>
 
-Foundry consists of:
+<p align="center">
+    <a href="https://github.com/metadock/contracts/actions?query=workflow%3Atest">
+        <img src="https://img.shields.io/github/actions/workflow/status/metadock/contracts/test.yml?branch=main&label=Tests" alt="Tests">
+    </a>
+    <a href="#">
+        <img src="https://img.shields.io/twitter/follow/gabrielstoica?label=Follow" alt="Twitter Follow">
+    </a>
+</p>
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+<p align="center">
+    <a href="https://www.metadock.com/">
+        <img src="docs/images/metadock_banner.jpeg" alt="Logo">
+    </a>
+</p>
 
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
-```
-
-### Test
-
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+MetaDock aims to offer a decentralised platform for freelancers and small companies to run all their operations
+leveraging the power of web3 as an organisation.
