@@ -140,9 +140,6 @@ contract Container is IContainer, ModuleManager {
 
     /// @inheritdoc IERC165
     function supportsInterface(bytes4 interfaceId) public pure override returns (bool) {
-        return
-            interfaceId == type(IContainer).interfaceId ||
-            interfaceId == type(IModuleManager).interfaceId ||
-            interfaceId == type(IERC165).interfaceId;
+        return interfaceId == type(IContainer).interfaceId || interfaceId == type(IERC165).interfaceId;
     }
 }
