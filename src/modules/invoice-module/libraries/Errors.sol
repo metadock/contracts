@@ -18,4 +18,5 @@ library Errors {
     error PaymentFailed();
     error InvalidInvoiceStatus(Types.Status currentStatus);
     error InvalidNumberOfPayments(uint40 expectedNumber);
+    error OnlyBrokerAdmin();
 }
