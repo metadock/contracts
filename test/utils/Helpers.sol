@@ -8,16 +8,16 @@ library Helpers {
         return
             InvoiceModulesTypes.Invoice({
                 recipient: recipient,
-                status: InvoiceModulesTypes.Status.Active,
+                status: InvoiceModulesTypes.Status.Pending,
                 frequency: InvoiceModulesTypes.Frequency.Regular,
                 startTime: 0,
-                endTime: uint40(block.timestamp) + 150,
+                endTime: uint40(block.timestamp) + 1 weeks,
                 payment: InvoiceModulesTypes.Payment({
-                    recurrence: InvoiceModulesTypes.Recurrence.OneTime,
                     method: InvoiceModulesTypes.Method.Transfer,
-                    amount: 1 ether,
+                    recurrence: InvoiceModulesTypes.Recurrence.OneTime,
+                    paymentsLeft: 1,
                     asset: address(0),
-                    paymentsLeft: 1
+                    amount: uint128(1 ether)
                 })
             });
     }

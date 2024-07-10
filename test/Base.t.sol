@@ -8,6 +8,8 @@ import { MockERC20NoReturn } from "./mocks/MockERC20NoReturn.sol";
 import { MockModule } from "./mocks/MockModule.sol";
 import { Container } from "./../src/Container.sol";
 import { InvoiceModule } from "./../src/modules/invoice-module/InvoiceModule.sol";
+import { SablierV2LockupLinear } from "@sablier/v2-core/src/SablierV2LockupLinear.sol";
+import { NFTDescriptorMock } from "@sablier/v2-core/test/mocks/NFTDescriptorMock.sol";
 
 abstract contract Base_Test is Test, Events {
     /*//////////////////////////////////////////////////////////////////////////
@@ -25,22 +27,36 @@ abstract contract Base_Test is Test, Events {
     MockERC20NoReturn internal usdt;
     MockModule internal mockModule;
 
+    // Sablier V2 related test contracts
+    NFTDescriptorMock internal mockNFTDescriptor;
+    SablierV2LockupLinear internal sablierV2LockupLinear;
+
     /*//////////////////////////////////////////////////////////////////////////
                                   SET-UP FUNCTION
     //////////////////////////////////////////////////////////////////////////*/
 
     function setUp() public virtual {
-        // Deploy test contracts
+        // Deploy the mock USDT contract to deal it to the users
         usdt = new MockERC20NoReturn("Tether USD", "USDT", 6);
-        invoiceModule = new InvoiceModule();
+
+        // Create test users
+        users = Users({ admin: createUser("admin"), eve: createUser("eve"), bob: createUser("bob") });
+
+        // Deploy test contracts
+        mockNFTDescriptor = new NFTDescriptorMock();
+        sablierV2LockupLinear = new SablierV2LockupLinear({
+            initialAdmin: users.admin,
+            initialNFTDescriptor: mockNFTDescriptor
+        });
+        invoiceModule = new InvoiceModule({
+            _brokerAdmin: users.admin,
+            _sablierLockupDeployment: sablierV2LockupLinear
+        });
         mockModule = new MockModule();
 
         // Label the test contracts so we can easily track them
         vm.label({ account: address(usdt), newLabel: "USDT" });
         vm.label({ account: address(invoiceModule), newLabel: "InvoiceModule" });
-
-        // Create test users
-        users = Users({ eve: createUser("eve"), bob: createUser("bob") });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -60,7 +76,7 @@ abstract contract Base_Test is Test, Events {
     function createUser(string memory name) internal returns (address payable) {
         address payable user = payable(makeAddr(name));
         vm.deal({ account: user, newBalance: 100 ether });
-        deal({ token: address(usdt), to: user, give: 1000000e16 });
+        deal({ token: address(usdt), to: user, give: 1000000e6 });
 
         return user;
     }
