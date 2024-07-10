@@ -23,15 +23,15 @@ contract LockupStreamCreator is ILockupStreamCreator {
     address public override brokerAdmin;
 
     /// @inheritdoc ILockupStreamCreator
-    UD60x18 public brokerFee;
+    UD60x18 public override brokerFee;
 
     /*//////////////////////////////////////////////////////////////////////////
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Initializes the address of the {SablierV2LockupLinear} contract and the address of the broker admin account or contract
-    constructor(address _sablierLockupDeployment, address _brokerAdmin) {
-        LOCKUP_LINEAR = ISablierV2LockupLinear(_sablierLockupDeployment);
+    constructor(ISablierV2LockupLinear _sablierLockupDeployment, address _brokerAdmin) {
+        LOCKUP_LINEAR = _sablierLockupDeployment;
         brokerAdmin = _brokerAdmin;
     }
 

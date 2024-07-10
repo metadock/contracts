@@ -11,6 +11,7 @@ import { IInvoiceModule } from "./interfaces/IInvoiceModule.sol";
 import { IContainer } from "./../../interfaces/IContainer.sol";
 import { LockupStreamCreator } from "./LockupStreamCreator.sol";
 import { LockupLinear } from "@sablier/v2-core/src/types/DataTypes.sol";
+import { ISablierV2LockupLinear } from "@sablier/v2-core/src/interfaces/ISablierV2LockupLinear.sol";
 
 /// @title InvoiceModule
 /// @notice See the documentation in {IInvoiceModule}
@@ -36,7 +37,7 @@ contract InvoiceModule is IInvoiceModule, LockupStreamCreator {
 
     /// @dev Initializes the {LockupStreamCreator} contract
     constructor(
-        address _sablierLockupDeployment,
+        ISablierV2LockupLinear _sablierLockupDeployment,
         address _brokerAdmin
     ) LockupStreamCreator(_sablierLockupDeployment, _brokerAdmin) {}
 
@@ -102,7 +103,7 @@ contract InvoiceModule is IInvoiceModule, LockupStreamCreator {
         // Effects: create the invoice
         _invoices[id] = Types.Invoice({
             recipient: msg.sender,
-            status: invoice.status,
+            status: Types.Status.Pending,
             frequency: invoice.frequency,
             startTime: invoice.startTime,
             endTime: invoice.endTime,
