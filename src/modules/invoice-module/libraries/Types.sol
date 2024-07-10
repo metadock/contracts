@@ -2,9 +2,6 @@
 pragma solidity ^0.8.26;
 
 library Types {
-    // frequency: recurring between 1 January - 1 March (2 months)
-    // recurrence: weekly
-    // method: transfer
     enum Recurrence {
         OneTime,
         Weekly,
@@ -24,7 +21,7 @@ library Types {
         uint24 paymentsLeft;
         address asset;
         // slot 1
-        uint256 amount;
+        uint128 amount;
     }
 
     enum Frequency {
@@ -33,7 +30,8 @@ library Types {
     }
 
     enum Status {
-        Active,
+        Pending,
+        Ongoing,
         Paid,
         Canceled
     }
