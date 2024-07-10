@@ -9,10 +9,12 @@ import { Types } from "./libraries/Types.sol";
 import { Errors } from "./libraries/Errors.sol";
 import { IInvoiceModule } from "./interfaces/IInvoiceModule.sol";
 import { IContainer } from "./../../interfaces/IContainer.sol";
+import { LockupStreamCreator } from "./LockupStreamCreator.sol";
+import { LockupLinear } from "@sablier/v2-core/src/types/DataTypes.sol";
 
 /// @title InvoiceModule
 /// @notice See the documentation in {IInvoiceModule}
-contract InvoiceModule is IInvoiceModule {
+contract InvoiceModule is IInvoiceModule, LockupStreamCreator {
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -27,6 +29,16 @@ contract InvoiceModule is IInvoiceModule {
 
     /// @dev Counter to keep track of the next ID used to create a new invoice
     uint256 private _nextInvoiceId;
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                    CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Initializes the {LockupStreamCreator} contract
+    constructor(
+        address _sablierLockupDeployment,
+        address _brokerAdmin
+    ) LockupStreamCreator(_sablierLockupDeployment, _brokerAdmin) {}
 
     /*//////////////////////////////////////////////////////////////////////////
                                       MODIFIERS
@@ -121,32 +133,46 @@ contract InvoiceModule is IInvoiceModule {
         Types.Invoice memory invoice = _invoices[id];
 
         // Checks: the invoice is not already paid or canceled
-        if (invoice.status != Types.Status.Active) {
-            revert Errors.InvalidInvoiceStatus({ currentStatus: invoice.status });
+        if (invoice.status == Types.Status.Paid) {
+            revert Errors.InvoiceAlreadyPaid();
+        } else if (invoice.status == Types.Status.Canceled) {
+            revert Errors.InvoiceCanceled();
         }
 
-        // Checks: the payment type is different than transfer
-        if (invoice.payment.method != Types.Method.Transfer) revert Errors.InvalidPaymentType();
-
-        // Effects: update the invoice status to `Paid` if this is a one-off invoice or
-        // if the invoice is recurring and the required number of payments has been made
-        if (invoice.frequency == Types.Frequency.Regular) {
-            _invoices[id].status = Types.Status.Paid;
+        // Handle the payment workflow depending on the payment method type
+        if (invoice.payment.method == Types.Method.Transfer) {
+            _payByTransfer(id, invoice);
         } else {
-            // Using unchecked because the number of payments left cannot underflow as the invoice status
-            // will be updated to `Paid` once `paymentLeft` is zero and this branch will not be
-            unchecked {
-                uint24 paymentsLeft = invoice.payment.paymentsLeft - 1;
-                _invoices[id].payment.paymentsLeft = paymentsLeft;
-                if (paymentsLeft == 0) {
-                    _invoices[id].status = Types.Status.Paid;
-                }
+            // Allow only ERC-20 based streams
+            if (invoice.payment.asset == address(0)) {
+                revert Errors.OnlyERC20StreamsAllowed();
+            }
+
+            //
+            _payByStream(invoice);
+        }
+
+        emit InvoicePaid({ id: id, payer: msg.sender });
+    }
+
+    /// @dev Pays the `id` invoice by transfer
+    function _payByTransfer(uint256 id, Types.Invoice memory invoice) internal {
+        // Effects: update the invoice status to `Paid` if the required number of payments has been made
+        // Using unchecked because the number of payments left cannot underflow as the invoice status
+        // will be updated to `Paid` once `paymentLeft` is zero
+        unchecked {
+            uint24 paymentsLeft = invoice.payment.paymentsLeft - 1;
+            _invoices[id].payment.paymentsLeft = paymentsLeft;
+            if (paymentsLeft == 0) {
+                _invoices[id].status = Types.Status.Paid;
+            } else if (invoice.status == Types.Status.Pending) {
+                _invoices[id].status = Types.Status.Ongoing;
             }
         }
 
         // Check if the payment must be done in native token (ETH) or an ERC-20 token
         if (invoice.payment.asset == address(0)) {
-            // Checks: the paid amount matches the invoice value
+            // Checks: the payment amount matches the invoice value
             if (msg.value < invoice.payment.amount) {
                 revert Errors.InvalidPaymentAmount({ amount: invoice.payment.amount });
             }
@@ -161,8 +187,19 @@ contract InvoiceModule is IInvoiceModule {
                 value: invoice.payment.amount
             });
         }
+    }
 
-        emit InvoicePaid({ id: id, payer: msg.sender });
+    function _payByStream(Types.Invoice memory invoice) internal {
+        // Create the `Durations` struct used to set up the cliff period and end time of the stream
+        LockupLinear.Durations memory durations = LockupLinear.Durations({ cliff: 0, total: invoice.endTime });
+
+        // Create the payment stream
+        LockupStreamCreator.createStream({
+            asset: IERC20(invoice.payment.asset),
+            totalAmount: invoice.payment.amount,
+            durations: durations,
+            recipient: invoice.recipient
+        });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
