@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 /// @notice Namespace for the structs used across the Invoice Module contracts
 library Types {
     enum Recurrence {
-        OneTime,
+        OneOff,
         Weekly,
         Monthly,
         Yearly
@@ -26,11 +26,6 @@ library Types {
         uint128 amount;
     }
 
-    enum Frequency {
-        Regular,
-        Recurring
-    }
-
     enum Status {
         Pending,
         Ongoing,
@@ -42,7 +37,6 @@ library Types {
         // slot 0
         address recipient;
         Status status;
-        Frequency frequency;
         uint40 startTime;
         uint40 endTime;
         // slot 1 and 2

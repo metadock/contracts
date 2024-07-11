@@ -88,7 +88,7 @@ contract InvoiceModule is IInvoiceModule, LockupStreamCreator {
         // Checks: validate the input parameters if the invoice must be paid in even transfers
         if (invoice.payment.method == Types.Method.Transfer) {
             // Checks: validate the input parameters if the invoice is recurring
-            if (invoice.frequency == Types.Frequency.Recurring) {
+            if (invoice.payment.paymentsLeft > 1) {
                 _checkRecurringTransferInvoiceParams({
                     recurrence: invoice.payment.recurrence,
                     paymentsLeft: invoice.payment.paymentsLeft,
@@ -105,7 +105,6 @@ contract InvoiceModule is IInvoiceModule, LockupStreamCreator {
         _invoices[id] = Types.Invoice({
             recipient: msg.sender,
             status: Types.Status.Pending,
-            frequency: invoice.frequency,
             startTime: invoice.startTime,
             endTime: invoice.endTime,
             payment: Types.Payment({
