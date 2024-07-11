@@ -16,7 +16,8 @@ library Helpers {
                     recurrence: InvoiceModulesTypes.Recurrence.OneOff,
                     paymentsLeft: 1,
                     asset: address(0),
-                    amount: uint128(1 ether)
+                    amount: uint128(1 ether),
+                    streamId: 0
                 })
             });
     }
