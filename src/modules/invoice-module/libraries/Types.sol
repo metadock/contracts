@@ -24,6 +24,8 @@ library Types {
         address asset;
         // slot 1
         uint128 amount;
+        // slot 2
+        uint256 streamId;
     }
 
     enum Status {
