@@ -44,6 +44,26 @@ contract StreamManager is IStreamManager {
 
     /// @inheritdoc IStreamManager
     function withdrawMultiple(uint256[] calldata streamIds, uint128[] calldata amounts) external {
-        sablier.withdrawMultiple({ streamIds: streamIds, amounts: amounts });
+        sablier.withdrawMultiple(streamIds, amounts);
+    }
+
+    /// @inheritdoc IStreamManager
+    function withdrawMaxAndTransfer(uint256 streamId, address newRecipient) external returns (uint128 withdrawnAmount) {
+        withdrawnAmount = sablier.withdrawMaxAndTransfer(streamId, newRecipient);
+    }
+
+    /// @inheritdoc IStreamManager
+    function cancel(uint256 streamId) external {
+        sablier.cancel(streamId);
+    }
+
+    /// @inheritdoc IStreamManager
+    function cancelMultiple(uint256[] calldata streamIds) external {
+        sablier.cancelMultiple(streamIds);
+    }
+
+    /// @inheritdoc IStreamManager
+    function renounce(uint256 streamId) external {
+        sablier.renounce(streamId);
     }
 }

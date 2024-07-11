@@ -29,4 +29,16 @@ interface IStreamManager {
 
     /// @notice See the documentation in {ISablierV2Lockup}
     function withdrawMultiple(uint256[] calldata streamIds, uint128[] calldata amounts) external;
+
+    /// @notice See the documentation in {ISablierV2Lockup}
+    function withdrawMaxAndTransfer(uint256 streamId, address newRecipient) external returns (uint128 withdrawnAmount);
+
+    /// @notice See the documentation in {ISablierV2Lockup}
+    function cancel(uint256 streamId) external;
+
+    /// @notice See the documentation in {ISablierV2Lockup}
+    function cancelMultiple(uint256[] calldata streamIds) external;
+
+    /// @notice See the documentation in {ISablierV2Lockup}
+    function renounce(uint256 streamId) external;
 }
