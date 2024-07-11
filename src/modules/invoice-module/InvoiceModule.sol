@@ -12,6 +12,7 @@ import { IContainer } from "./../../interfaces/IContainer.sol";
 import { LockupStreamCreator } from "./LockupStreamCreator.sol";
 import { LockupLinear } from "@sablier/v2-core/src/types/DataTypes.sol";
 import { ISablierV2LockupLinear } from "@sablier/v2-core/src/interfaces/ISablierV2LockupLinear.sol";
+import { Helpers } from "./libraries/Helpers.sol";
 
 /// @title InvoiceModule
 /// @notice See the documentation in {IInvoiceModule}
@@ -78,14 +79,14 @@ contract InvoiceModule is IInvoiceModule, LockupStreamCreator {
             revert Errors.PaymentAmountZero();
         }
 
+        // Checks: end time is not in the past
+        uint40 currentTime = uint40(block.timestamp);
+        if (currentTime >= invoice.endTime) {
+            revert Errors.EndTimeLowerThanCurrentTime();
+        }
+
         // Checks: validate the input parameters if the invoice must be paid in even transfers
         if (invoice.payment.method == Types.Method.Transfer) {
-            // Checks: end time is not in the past
-            uint40 currentTime = uint40(block.timestamp);
-            if (currentTime >= invoice.endTime) {
-                revert Errors.EndTimeLowerThanCurrentTime();
-            }
-
             // Checks: validate the input parameters if the invoice is recurring
             if (invoice.frequency == Types.Frequency.Recurring) {
                 _checkRecurringTransferInvoiceParams({
@@ -149,12 +150,19 @@ contract InvoiceModule is IInvoiceModule, LockupStreamCreator {
                 revert Errors.OnlyERC20StreamsAllowed();
             }
 
-            //
-            _payByStream(invoice);
+            uint256 streamId;
+            // Check to see wether to pay by creating a linear or tranched stream
+            if (invoice.payment.method == Types.Method.LinearStream) {
+                streamId = _payByLinearStream(invoice);
+            } else streamId = _payByTranchedStream(invoice);
         }
 
         emit InvoicePaid({ id: id, payer: msg.sender });
     }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                    INTERNAL-METHODS
+    //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Pays the `id` invoice by transfer
     function _payByTransfer(uint256 id, Types.Invoice memory invoice) internal {
@@ -190,22 +198,28 @@ contract InvoiceModule is IInvoiceModule, LockupStreamCreator {
         }
     }
 
-    function _payByStream(Types.Invoice memory invoice) internal {
-        // Create the `Durations` struct used to set up the cliff period and end time of the stream
-        LockupLinear.Durations memory durations = LockupLinear.Durations({ cliff: 0, total: invoice.endTime });
-
-        // Create the payment stream
-        LockupStreamCreator.createStream({
+    /// @dev Create the linear stream payment
+    function _payByLinearStream(Types.Invoice memory invoice) internal returns (uint256 streamId) {
+        streamId = LockupStreamCreator.createLinearStream({
             asset: IERC20(invoice.payment.asset),
             totalAmount: invoice.payment.amount,
-            durations: durations,
+            startTime: invoice.startTime,
+            endTime: invoice.endTime,
             recipient: invoice.recipient
         });
     }
 
-    /*//////////////////////////////////////////////////////////////////////////
-                                      HELPERS
-    //////////////////////////////////////////////////////////////////////////*/
+    /// @dev Create the tranched stream payment
+    function _payByTranchedStream(Types.Invoice memory invoice) internal returns (uint256 streamId) {
+        streamId = LockupStreamCreator.createTranchedStream({
+            asset: IERC20(invoice.payment.asset),
+            totalAmount: invoice.payment.amount,
+            startTime: invoice.startTime,
+            endTime: invoice.endTime,
+            recipient: invoice.recipient,
+            recurrence: invoice.payment.recurrence
+        });
+    }
 
     /// @dev Validates the input parameters if the invoice is recurring and must be paid in even transfers
     function _checkRecurringTransferInvoiceParams(
@@ -220,28 +234,11 @@ contract InvoiceModule is IInvoiceModule, LockupStreamCreator {
         }
 
         // Calculate the expected number of payments based on the invoice recurrence and payment interval
-        uint40 numberOfPayments = _computeNumberOfRecurringPayments(recurrence, startTime, endTime);
+        uint40 numberOfPayments = Helpers.computeNumberOfRecurringPayments(recurrence, startTime, endTime);
 
         // Checks: the specified number of payments is valid
         if (paymentsLeft != numberOfPayments) {
             revert Errors.InvalidNumberOfPayments({ expectedNumber: numberOfPayments });
-        }
-    }
-
-    /// @dev Calculates the number of payments that must be done for a Recurring invoice that must be paid in transfers
-    function _computeNumberOfRecurringPayments(
-        Types.Recurrence recurrence,
-        uint40 startTime,
-        uint40 endTime
-    ) internal pure returns (uint40 numberOfPayments) {
-        uint40 interval = endTime - startTime;
-
-        if (recurrence == Types.Recurrence.Weekly) {
-            numberOfPayments = interval / 1 weeks;
-        } else if (recurrence == Types.Recurrence.Monthly) {
-            numberOfPayments = interval / 4 weeks;
-        } else if (recurrence == Types.Recurrence.Yearly) {
-            numberOfPayments = interval / 48 weeks;
         }
     }
 }

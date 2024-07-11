@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+/// @notice Namespace for the structs used across the Invoice Module contracts
 library Types {
     enum Recurrence {
         OneTime,
@@ -11,7 +12,8 @@ library Types {
 
     enum Method {
         Transfer,
-        Stream
+        LinearStream,
+        TranchedStream
     }
 
     struct Payment {
