@@ -2,6 +2,7 @@
 pragma solidity >=0.8.22;
 
 import { ISablierV2LockupLinear } from "@sablier/v2-core/src/interfaces/ISablierV2LockupLinear.sol";
+import { ISablierV2LockupTranched } from "@sablier/v2-core/src/interfaces/ISablierV2LockupTranched.sol";
 import { UD60x18 } from "@prb/math/src/UD60x18.sol";
 
 /// @title ILockupStreamCreator
@@ -25,6 +26,11 @@ interface ILockupStreamCreator {
     /// @dev This is initialized at construction time and it might be different depending on the deployment chain
     /// See https://docs.sablier.com/contracts/v2/deployments
     function LOCKUP_LINEAR() external view returns (ISablierV2LockupLinear);
+
+    /// @notice The address of the {SablierV2LockupTranched} contract used to create tranched streams
+    /// @dev This is initialized at construction time and it might be different depending on the deployment chain
+    /// See https://docs.sablier.com/contracts/v2/deployments
+    function LOCKUP_TRANCHED() external view returns (ISablierV2LockupTranched);
 
     /// @notice The address of the broker admin account or contract managing the broker fee
     function brokerAdmin() external view returns (address);

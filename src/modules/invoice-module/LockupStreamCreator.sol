@@ -4,10 +4,13 @@ pragma solidity >=0.8.22;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ud60x18, UD60x18 } from "@prb/math/src/UD60x18.sol";
 import { ISablierV2LockupLinear } from "@sablier/v2-core/src/interfaces/ISablierV2LockupLinear.sol";
+import { ISablierV2LockupTranched } from "@sablier/v2-core/src/interfaces/ISablierV2LockupTranched.sol";
 import { ILockupStreamCreator } from "./interfaces/ILockupStreamCreator.sol";
 import { Broker, LockupLinear } from "@sablier/v2-core/src/types/DataTypes.sol";
-import { LockupLinear } from "@sablier/v2-core/src/types/DataTypes.sol";
+import { LockupLinear, LockupTranched } from "@sablier/v2-core/src/types/DataTypes.sol";
 import { Errors } from "./libraries/Errors.sol";
+import { Helpers } from "./libraries/Helpers.sol";
+import { Types } from "./libraries/Types.sol";
 
 /// @title LockupStreamCreator
 /// @dev See the documentation in {ILockupStreamCreator}
@@ -18,6 +21,9 @@ contract LockupStreamCreator is ILockupStreamCreator {
 
     /// @inheritdoc ILockupStreamCreator
     ISablierV2LockupLinear public immutable override LOCKUP_LINEAR;
+
+    /// @inheritdoc ILockupStreamCreator
+    ISablierV2LockupTranched public immutable override LOCKUP_TRANCHED;
 
     /// @inheritdoc ILockupStreamCreator
     address public override brokerAdmin;
@@ -49,21 +55,35 @@ contract LockupStreamCreator is ILockupStreamCreator {
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Creates either a Lockup Linear or Dynamic stream
-    function createStream(
+    /// @dev Creates a Lockup Linear stream
+    function createLinearStream(
         IERC20 asset,
         uint128 totalAmount,
-        LockupLinear.Durations memory durations,
+        uint40 startTime,
+        uint40 endTime,
         address recipient
     ) public returns (uint256 streamId) {
-        // Transfer the provided amount of ERC-20 tokens to this contract
-        asset.transferFrom(msg.sender, address(this), totalAmount);
-
-        // Approve the Sablier contract to spend the ERC-20 tokens
-        asset.approve(address(LOCKUP_LINEAR), totalAmount);
+        // Transfer the provided amount of ERC-20 tokens to this contract and approve the Sablier contract to spend it
+        _transferFromAndApprove({ asset: asset, spender: address(LOCKUP_LINEAR), amount: totalAmount });
 
         // Create the Lockup Linear stream
-        streamId = _createLinearStream(asset, totalAmount, durations, recipient);
+        streamId = _createLinearStream(asset, totalAmount, startTime, endTime, recipient);
+    }
+
+    /// @dev Creates a Lockup Tranched stream
+    function createTranchedStream(
+        IERC20 asset,
+        uint128 totalAmount,
+        uint40 startTime,
+        uint40 endTime,
+        address recipient,
+        Types.Recurrence recurrence
+    ) public returns (uint256 streamId) {
+        // Transfer the provided amount of ERC-20 tokens to this contract and approve the Sablier contract to spend it
+        _transferFromAndApprove({ asset: asset, spender: address(LOCKUP_TRANCHED), amount: totalAmount });
+
+        // Create the Lockup Linear stream
+        streamId = _createTranchedStream(asset, totalAmount, startTime, endTime, recipient, recurrence);
     }
 
     /// @dev Updates the fee charged by the broker
@@ -79,16 +99,18 @@ contract LockupStreamCreator is ILockupStreamCreator {
                                     INTERNAL-METHODS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Creates a Lockup Linear stream
-    /// See https://docs.sablier.com/contracts/v2/guides/create-stream/lockup-linear
+    /// @notice Creates a Lockup Linear stream
+    /// See https://docs.sablier.com/concepts/protocol/stream-types#lockup-linear
+    /// @dev See https://docs.sablier.com/contracts/v2/guides/create-stream/lockup-linear
     function _createLinearStream(
         IERC20 asset,
         uint128 totalAmount,
-        LockupLinear.Durations memory durations,
+        uint40 startTime,
+        uint40 endTime,
         address recipient
     ) internal returns (uint256 streamId) {
         // Declare the params struct
-        LockupLinear.CreateWithDurations memory params;
+        LockupLinear.CreateWithTimestamps memory params;
 
         // Declare the function parameters
         params.sender = msg.sender; // The sender will be able to cancel the stream
@@ -97,13 +119,71 @@ contract LockupStreamCreator is ILockupStreamCreator {
         params.asset = asset; // The streaming asset
         params.cancelable = true; // Whether the stream will be cancelable or not
         params.transferable = true; // Whether the stream will be transferable or not
-        params.durations = LockupLinear.Durations({
-            cliff: durations.cliff, // Assets will be unlocked only after x period of time
-            total: durations.total // Setting a total duration of x period of time
-        });
+        params.timestamps = LockupLinear.Timestamps({ start: startTime, cliff: 0, end: endTime });
         params.broker = Broker({ account: brokerAdmin, fee: brokerFee }); // Optional parameter for charging a fee
 
         // Create the LockupLinear stream using a function that sets the start time to `block.timestamp`
-        streamId = LOCKUP_LINEAR.createWithDurations(params);
+        streamId = LOCKUP_LINEAR.createWithTimestamps(params);
+    }
+
+    /// @notice Creates a Lockup Tranched stream
+    /// See https://docs.sablier.com/concepts/protocol/stream-types#unlock-monthly
+    /// @dev See https://docs.sablier.com/contracts/v2/guides/create-stream/lockup-linear
+    function _createTranchedStream(
+        IERC20 asset,
+        uint128 totalAmount,
+        uint40 startTime,
+        uint40 endTime,
+        address recipient,
+        Types.Recurrence recurrence
+    ) internal returns (uint256 streamId) {
+        // Declare the params struct
+        LockupTranched.CreateWithDurations memory params;
+
+        // Declare the function parameters
+        params.sender = msg.sender; // The sender will be able to cancel the stream
+        params.recipient = recipient; // The recipient of the streamed assets
+        params.totalAmount = totalAmount; // Total amount is the amount inclusive of all fees
+        params.asset = asset; // The streaming asset
+        params.cancelable = true; // Whether the stream will be cancelable or not
+        params.transferable = true; // Whether the stream will be transferable or not
+
+        // Calculate the number of tranches based on the payment interval and the type of recurrence
+        uint128 numberOfTranches = Helpers.computeNumberOfRecurringPayments(recurrence, startTime, endTime);
+
+        // Calculate the duration of each tranche based on the payment recurrence
+        uint40 durationPerTranche = _computeDurationPerTrache(recurrence);
+
+        // Calculate the amount that must be unlocked with each tranche
+        uint128 amountPerTranche = totalAmount / numberOfTranches;
+
+        // Create the tranches array
+        params.tranches = new LockupTranched.TrancheWithDuration[](numberOfTranches);
+        for (uint256 i; i < numberOfTranches; ++i) {
+            params.tranches[i] = LockupTranched.TrancheWithDuration({
+                amount: amountPerTranche,
+                duration: durationPerTranche
+            });
+        }
+
+        // Optional parameter for charging a fee
+        params.broker = Broker({ account: brokerAdmin, fee: brokerFee });
+
+        // Create the LockupTranched stream
+        streamId = LOCKUP_TRANCHED.createWithDurations(params);
+    }
+
+    function _transferFromAndApprove(IERC20 asset, uint128 amount, address spender) internal {
+        // Transfer the provided amount of ERC-20 tokens to this contract
+        asset.transferFrom(msg.sender, address(this), amount);
+
+        // Approve the Sablier contract to spend the ERC-20 tokens
+        asset.approve(spender, amount);
+    }
+
+    function _computeDurationPerTrache(Types.Recurrence recurrence) internal pure returns (uint40 duration) {
+        if (recurrence == Types.Recurrence.Weekly) duration = 1 weeks;
+        else if (recurrence == Types.Recurrence.Monthly) duration = 4 weeks;
+        else if (recurrence == Types.Recurrence.Yearly) duration = 48 weeks;
     }
 }
