@@ -15,22 +15,16 @@ contract Constructor_Unit_Concrete_Test is Base_Test {
     function test_Constructor() external {
         // Expect the {ModuleEnabled} event to be emitted
         vm.expectEmit();
-        emit Events.ModuleEnabled({ module: address(invoiceModule) });
-
-        // Expect the {ModuleEnabled} event to be emitted
-        vm.expectEmit();
         emit Events.ModuleEnabled({ module: address(mockModule) });
 
         // Create the initial modules array
-        address[] memory modules = new address[](2);
-        modules[0] = address(invoiceModule);
-        modules[1] = address(mockModule);
+        address[] memory modules = new address[](1);
+        modules[0] = address(mockModule);
 
         // Deploy the {ModuleManager} with the `modules` initial modules enabled
         moduleManager = new ModuleManager({ _initialModules: modules });
 
         // Assert the modules enablement state
-        assertTrue(moduleManager.isModuleEnabled({ module: address(invoiceModule) }));
         assertTrue(moduleManager.isModuleEnabled({ module: address(mockModule) }));
     }
 }

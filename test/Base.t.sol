@@ -9,6 +9,8 @@ import { MockModule } from "./mocks/MockModule.sol";
 import { Container } from "./../src/Container.sol";
 import { InvoiceModule } from "./../src/modules/invoice-module/InvoiceModule.sol";
 import { SablierV2LockupLinear } from "@sablier/v2-core/src/SablierV2LockupLinear.sol";
+import { SablierV2LockupTranched } from "@sablier/v2-core/src/SablierV2LockupTranched.sol";
+import { SablierV2Lockup } from "@sablier/v2-core/src/abstracts/SablierV2Lockup.sol";
 import { NFTDescriptorMock } from "@sablier/v2-core/test/mocks/NFTDescriptorMock.sol";
 
 abstract contract Base_Test is Test, Events {
@@ -30,6 +32,8 @@ abstract contract Base_Test is Test, Events {
     // Sablier V2 related test contracts
     NFTDescriptorMock internal mockNFTDescriptor;
     SablierV2LockupLinear internal sablierV2LockupLinear;
+    SablierV2LockupTranched internal sablierV2LockupTranched;
+    SablierV2Lockup internal sablier;
 
     /*//////////////////////////////////////////////////////////////////////////
                                   SET-UP FUNCTION
@@ -43,20 +47,11 @@ abstract contract Base_Test is Test, Events {
         users = Users({ admin: createUser("admin"), eve: createUser("eve"), bob: createUser("bob") });
 
         // Deploy test contracts
-        mockNFTDescriptor = new NFTDescriptorMock();
-        sablierV2LockupLinear = new SablierV2LockupLinear({
-            initialAdmin: users.admin,
-            initialNFTDescriptor: mockNFTDescriptor
-        });
-        invoiceModule = new InvoiceModule({
-            _brokerAdmin: users.admin,
-            _sablierLockupDeployment: sablierV2LockupLinear
-        });
         mockModule = new MockModule();
 
         // Label the test contracts so we can easily track them
         vm.label({ account: address(usdt), newLabel: "USDT" });
-        vm.label({ account: address(invoiceModule), newLabel: "InvoiceModule" });
+        vm.label({ account: address(mockModule), newLabel: "MockModule" });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
