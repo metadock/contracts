@@ -4,19 +4,20 @@ pragma solidity ^0.8.26;
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ISablierV2LockupLinear } from "@sablier/v2-core/src/interfaces/ISablierV2LockupLinear.sol";
+import { ISablierV2LockupTranched } from "@sablier/v2-core/src/interfaces/ISablierV2LockupTranched.sol";
+import { ISablierV2Lockup } from "@sablier/v2-core/src/interfaces/ISablierV2Lockup.sol";
 
 import { Types } from "./libraries/Types.sol";
 import { Errors } from "./libraries/Errors.sol";
 import { IInvoiceModule } from "./interfaces/IInvoiceModule.sol";
 import { IContainer } from "./../../interfaces/IContainer.sol";
-import { LockupStreamCreator } from "./LockupStreamCreator.sol";
-import { LockupLinear } from "@sablier/v2-core/src/types/DataTypes.sol";
-import { ISablierV2LockupLinear } from "@sablier/v2-core/src/interfaces/ISablierV2LockupLinear.sol";
+import { StreamCreator } from "./sablier-v2/StreamCreator.sol";
 import { Helpers } from "./libraries/Helpers.sol";
 
 /// @title InvoiceModule
 /// @notice See the documentation in {IInvoiceModule}
-contract InvoiceModule is IInvoiceModule, LockupStreamCreator {
+contract InvoiceModule is IInvoiceModule, StreamCreator {
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -36,11 +37,13 @@ contract InvoiceModule is IInvoiceModule, LockupStreamCreator {
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Initializes the {LockupStreamCreator} contract
+    /// @dev Initializes the {StreamCreator} contract
     constructor(
-        ISablierV2LockupLinear _sablierLockupDeployment,
+        ISablierV2Lockup _sablier,
+        ISablierV2LockupLinear _sablierLockupLinearDeployment,
+        ISablierV2LockupTranched _sablierLockupTranchedDeployment,
         address _brokerAdmin
-    ) LockupStreamCreator(_sablierLockupDeployment, _brokerAdmin) {}
+    ) StreamCreator(_sablier, _sablierLockupLinearDeployment, _sablierLockupTranchedDeployment, _brokerAdmin) {}
 
     /*//////////////////////////////////////////////////////////////////////////
                                       MODIFIERS
@@ -212,7 +215,7 @@ contract InvoiceModule is IInvoiceModule, LockupStreamCreator {
 
     /// @dev Create the linear stream payment
     function _payByLinearStream(Types.Invoice memory invoice) internal returns (uint256 streamId) {
-        streamId = LockupStreamCreator.createLinearStream({
+        streamId = StreamCreator.createLinearStream({
             asset: IERC20(invoice.payment.asset),
             totalAmount: invoice.payment.amount,
             startTime: invoice.startTime,
@@ -223,7 +226,7 @@ contract InvoiceModule is IInvoiceModule, LockupStreamCreator {
 
     /// @dev Create the tranched stream payment
     function _payByTranchedStream(Types.Invoice memory invoice) internal returns (uint256 streamId) {
-        streamId = LockupStreamCreator.createTranchedStream({
+        streamId = StreamCreator.createTranchedStream({
             asset: IERC20(invoice.payment.asset),
             totalAmount: invoice.payment.amount,
             startTime: invoice.startTime,

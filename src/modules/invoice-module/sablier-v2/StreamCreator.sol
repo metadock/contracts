@@ -1,34 +1,37 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.22;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { ud60x18, UD60x18 } from "@prb/math/src/UD60x18.sol";
 import { ISablierV2LockupLinear } from "@sablier/v2-core/src/interfaces/ISablierV2LockupLinear.sol";
 import { ISablierV2LockupTranched } from "@sablier/v2-core/src/interfaces/ISablierV2LockupTranched.sol";
-import { ILockupStreamCreator } from "./interfaces/ILockupStreamCreator.sol";
-import { Broker, LockupLinear } from "@sablier/v2-core/src/types/DataTypes.sol";
+import { ISablierV2Lockup } from "@sablier/v2-core/src/interfaces/ISablierV2Lockup.sol";
 import { LockupLinear, LockupTranched } from "@sablier/v2-core/src/types/DataTypes.sol";
-import { Errors } from "./libraries/Errors.sol";
-import { Helpers } from "./libraries/Helpers.sol";
-import { Types } from "./libraries/Types.sol";
+import { Broker, LockupLinear } from "@sablier/v2-core/src/types/DataTypes.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ud60x18, UD60x18 } from "@prb/math/src/UD60x18.sol";
 
-/// @title LockupStreamCreator
-/// @dev See the documentation in {ILockupStreamCreator}
-contract LockupStreamCreator is ILockupStreamCreator {
+import { IStreamCreator } from "./interfaces/IStreamCreator.sol";
+import { StreamManager } from "./StreamManager.sol";
+import { Helpers } from "./../libraries/Helpers.sol";
+import { Errors } from "./../libraries/Errors.sol";
+import { Types } from "./../libraries/Types.sol";
+
+/// @title StreamCreator
+/// @dev See the documentation in {IStreamCreator}
+contract StreamCreator is IStreamCreator, StreamManager {
     /*//////////////////////////////////////////////////////////////////////////
                                   PUBLIC STORAGE
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc ILockupStreamCreator
+    /// @inheritdoc IStreamCreator
     ISablierV2LockupLinear public immutable override LOCKUP_LINEAR;
 
-    /// @inheritdoc ILockupStreamCreator
+    /// @inheritdoc IStreamCreator
     ISablierV2LockupTranched public immutable override LOCKUP_TRANCHED;
 
-    /// @inheritdoc ILockupStreamCreator
+    /// @inheritdoc IStreamCreator
     address public override brokerAdmin;
 
-    /// @inheritdoc ILockupStreamCreator
+    /// @inheritdoc IStreamCreator
     UD60x18 public override brokerFee;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -36,8 +39,14 @@ contract LockupStreamCreator is ILockupStreamCreator {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Initializes the address of the {SablierV2LockupLinear} contract and the address of the broker admin account or contract
-    constructor(ISablierV2LockupLinear _sablierLockupDeployment, address _brokerAdmin) {
-        LOCKUP_LINEAR = _sablierLockupDeployment;
+    constructor(
+        ISablierV2Lockup _sablier,
+        ISablierV2LockupLinear _sablierLockupLinearDeployment,
+        ISablierV2LockupTranched _sablierLockupTranchedDeployment,
+        address _brokerAdmin
+    ) StreamManager(_sablier) {
+        LOCKUP_LINEAR = _sablierLockupLinearDeployment;
+        LOCKUP_TRANCHED = _sablierLockupTranchedDeployment;
         brokerAdmin = _brokerAdmin;
     }
 
@@ -55,7 +64,7 @@ contract LockupStreamCreator is ILockupStreamCreator {
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Creates a Lockup Linear stream
+    /// @inheritdoc IStreamCreator
     function createLinearStream(
         IERC20 asset,
         uint128 totalAmount,
@@ -70,7 +79,7 @@ contract LockupStreamCreator is ILockupStreamCreator {
         streamId = _createLinearStream(asset, totalAmount, startTime, endTime, recipient);
     }
 
-    /// @dev Creates a Lockup Tranched stream
+    /// @inheritdoc IStreamCreator
     function createTranchedStream(
         IERC20 asset,
         uint128 totalAmount,
@@ -86,7 +95,7 @@ contract LockupStreamCreator is ILockupStreamCreator {
         streamId = _createTranchedStream(asset, totalAmount, startTime, endTime, recipient, recurrence);
     }
 
-    /// @dev Updates the fee charged by the broker
+    /// @inheritdoc IStreamCreator
     function updateBrokerFee(UD60x18 newBrokerFee) public onlyBrokerAdmin {
         // Log the broker fee update
         emit BrokerFeeUpdated({ oldFee: brokerFee, newFee: newBrokerFee });
