@@ -6,18 +6,17 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierV2LockupLinear } from "@sablier/v2-core/src/interfaces/ISablierV2LockupLinear.sol";
 import { ISablierV2LockupTranched } from "@sablier/v2-core/src/interfaces/ISablierV2LockupTranched.sol";
-import { ISablierV2Lockup } from "@sablier/v2-core/src/interfaces/ISablierV2Lockup.sol";
 
 import { Types } from "./libraries/Types.sol";
 import { Errors } from "./libraries/Errors.sol";
 import { IInvoiceModule } from "./interfaces/IInvoiceModule.sol";
 import { IContainer } from "./../../interfaces/IContainer.sol";
-import { StreamCreator } from "./sablier-v2/StreamCreator.sol";
+import { StreamManager } from "./sablier-v2/StreamManager.sol";
 import { Helpers } from "./libraries/Helpers.sol";
 
 /// @title InvoiceModule
 /// @notice See the documentation in {IInvoiceModule}
-contract InvoiceModule is IInvoiceModule, StreamCreator {
+contract InvoiceModule is IInvoiceModule, StreamManager {
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -37,13 +36,12 @@ contract InvoiceModule is IInvoiceModule, StreamCreator {
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Initializes the {StreamCreator} contract
+    /// @dev Initializes the {StreamManager} contract
     constructor(
-        ISablierV2Lockup _sablier,
         ISablierV2LockupLinear _sablierLockupLinearDeployment,
         ISablierV2LockupTranched _sablierLockupTranchedDeployment,
         address _brokerAdmin
-    ) StreamCreator(_sablier, _sablierLockupLinearDeployment, _sablierLockupTranchedDeployment, _brokerAdmin) {}
+    ) StreamManager(_sablierLockupLinearDeployment, _sablierLockupTranchedDeployment, _brokerAdmin) {}
 
     /*//////////////////////////////////////////////////////////////////////////
                                       MODIFIERS
@@ -215,7 +213,7 @@ contract InvoiceModule is IInvoiceModule, StreamCreator {
 
     /// @dev Create the linear stream payment
     function _payByLinearStream(Types.Invoice memory invoice) internal returns (uint256 streamId) {
-        streamId = StreamCreator.createLinearStream({
+        streamId = StreamManager.createLinearStream({
             asset: IERC20(invoice.payment.asset),
             totalAmount: invoice.payment.amount,
             startTime: invoice.startTime,
@@ -226,7 +224,7 @@ contract InvoiceModule is IInvoiceModule, StreamCreator {
 
     /// @dev Create the tranched stream payment
     function _payByTranchedStream(Types.Invoice memory invoice) internal returns (uint256 streamId) {
-        streamId = StreamCreator.createTranchedStream({
+        streamId = StreamManager.createTranchedStream({
             asset: IERC20(invoice.payment.asset),
             totalAmount: invoice.payment.amount,
             startTime: invoice.startTime,
