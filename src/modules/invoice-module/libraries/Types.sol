@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+/// @notice Namespace for the structs used across the Invoice Module contracts
 library Types {
-    // frequency: recurring between 1 January - 1 March (2 months)
-    // recurrence: weekly
-    // method: transfer
     enum Recurrence {
-        OneTime,
+        OneOff,
         Weekly,
         Monthly,
         Yearly
@@ -14,7 +12,8 @@ library Types {
 
     enum Method {
         Transfer,
-        Stream
+        LinearStream,
+        TranchedStream
     }
 
     struct Payment {
@@ -24,16 +23,14 @@ library Types {
         uint24 paymentsLeft;
         address asset;
         // slot 1
-        uint256 amount;
-    }
-
-    enum Frequency {
-        Regular,
-        Recurring
+        uint128 amount;
+        // slot 2
+        uint256 streamId;
     }
 
     enum Status {
-        Active,
+        Pending,
+        Ongoing,
         Paid,
         Canceled
     }
@@ -42,7 +39,6 @@ library Types {
         // slot 0
         address recipient;
         Status status;
-        Frequency frequency;
         uint40 startTime;
         uint40 endTime;
         // slot 1 and 2

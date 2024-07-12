@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import { Container_Unit_Concrete_Test } from "../Container.t.sol";
-import { InvoiceModule } from "./../../../../../src/modules/invoice-module/InvoiceModule.sol";
+import { MockModule } from "../../../../mocks/MockModule.sol";
 import { Events } from "../../../../utils/Events.sol";
 import { Errors } from "../../../../utils/Errors.sol";
 
@@ -42,7 +42,7 @@ contract EnableModule_Unit_Concrete_Test is Container_Unit_Concrete_Test {
 
     function test_EnableModule() external whenCallerOwner whenNonZeroCodeModule {
         // Create a new mock module
-        InvoiceModule mockModule = new InvoiceModule();
+        MockModule mockModule = new MockModule();
 
         // Expect the {ModuleEnabled} to be emitted
         vm.expectEmit();

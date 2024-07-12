@@ -42,31 +42,24 @@ contract Execute_Unit_Concrete_Test is Container_Unit_Concrete_Test {
     }
 
     function test_Execute() external whenCallerOwner whenModuleEnabled {
-        // Create the mock invoice and calldata for the module execution
-        InvoiceModuleTypes.Invoice memory invoice = Helpers.createInvoiceDataType({ recipient: address(container) });
-        bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint8,uint40,uint40,(uint8,uint8,uint24,address,uint256)))",
-            invoice
-        );
+        // Create the calldata for the mock module execution
+        bytes memory data = abi.encodeWithSignature("createModuleItem()", "");
 
         // Expect the {ModuleExecutionSucceded} event to be emitted
         vm.expectEmit();
-        emit Events.ModuleExecutionSucceded({ module: address(invoiceModule), value: 0, data: data });
+        emit Events.ModuleExecutionSucceded({ module: address(mockModule), value: 0, data: data });
 
         // Run the test
-        container.execute({ module: address(invoiceModule), value: 0, data: data });
+        container.execute({ module: address(mockModule), value: 0, data: data });
 
-        // Alter the `createInvoice` method signature by removing the `payment.amount` field
-        bytes memory wrongData = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint8,uint40,uint40,(uint8,uint8,uint24,address)))",
-            invoice
-        );
+        // Alter the `createModuleItem` method signature by adding an invalid `uint256` field
+        bytes memory wrongData = abi.encodeWithSignature("createModuleItem(uint256)", 1);
 
         // Expect the {ModuleExecutionFailed} event to be emitted
         vm.expectEmit();
-        emit Events.ModuleExecutionFailed({ module: address(invoiceModule), value: 0, data: wrongData });
+        emit Events.ModuleExecutionFailed({ module: address(mockModule), value: 0, data: wrongData });
 
         // Run the test
-        container.execute({ module: address(invoiceModule), value: 0, data: wrongData });
+        container.execute({ module: address(mockModule), value: 0, data: wrongData });
     }
 }
