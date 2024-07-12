@@ -2,7 +2,6 @@
 pragma solidity ^0.8.26;
 
 import { ModuleManager_Unit_Concrete_Test } from "../ModuleManager.t.sol";
-import { InvoiceModule } from "./../../../../../src/modules/invoice-module/InvoiceModule.sol";
 import { Events } from "../../../../utils/Events.sol";
 import { Errors } from "../../../../utils/Errors.sol";
 import { MockModule } from "../../../../mocks/MockModule.sol";

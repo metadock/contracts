@@ -12,13 +12,26 @@ interface IInvoiceModule {
 
     /// @notice Emitted when a regular or recurring invoice is created
     /// @param id The ID of the invoice
-    /// @param invoice The details of the invoice following the {Invoice} struct format
-    event InvoiceCreated(uint256 indexed id, Types.Invoice invoice);
+    /// @param recipient The address receiving the payment
+    /// @param status The status of the invoice
+    /// @param startTime The timestamp when the invoice takes effect
+    /// @param endTime The timestamp by which the invoice must be paid
+    /// @param payment Struct representing the payment details associated with the invoice
+    event InvoiceCreated(
+        uint256 id,
+        address indexed recipient,
+        Types.Status status,
+        uint40 startTime,
+        uint40 endTime,
+        Types.Payment payment
+    );
 
     /// @notice Emitted when a regular or recurring invoice is paid
     /// @param id The ID of the invoice
     /// @param payer The address of the payer
-    event InvoicePaid(uint256 indexed id, address indexed payer);
+    /// @param status The status of the invoice
+    /// @param payment Struct representing the payment details associated with the invoice
+    event InvoicePaid(uint256 indexed id, address indexed payer, Types.Status status, Types.Payment payment);
 
     /*//////////////////////////////////////////////////////////////////////////
                                  CONSTANT FUNCTIONS

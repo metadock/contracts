@@ -16,8 +16,14 @@ contract MockModule {
 
     /// @dev Allow only calls from contracts implementing the {IContainer} interface
     modifier onlyContainer() {
+        // Checks: the sender is a valid non-zero code size contract
+        if (msg.sender.code.length == 0) {
+            revert Errors.ContainerZeroCodeSize();
+        }
+
+        // Checks: the sender implements the ERC-165 interface required by {IContainer}
         bytes4 interfaceId = type(IContainer).interfaceId;
-        if (!IERC165(msg.sender).supportsInterface(interfaceId)) revert Errors.NotContainer();
+        if (!IERC165(msg.sender).supportsInterface(interfaceId)) revert Errors.ContainerUnsupportedInterface();
         _;
     }
 
