@@ -38,10 +38,10 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
 
     /// @dev Initializes the {StreamManager} contract
     constructor(
-        ISablierV2LockupLinear _sablierLockupLinearDeployment,
-        ISablierV2LockupTranched _sablierLockupTranchedDeployment,
+        ISablierV2LockupLinear _sablierLockupLinear,
+        ISablierV2LockupTranched _sablierLockupTranched,
         address _brokerAdmin
-    ) StreamManager(_sablierLockupLinearDeployment, _sablierLockupTranchedDeployment, _brokerAdmin) {}
+    ) StreamManager(_sablierLockupLinear, _sablierLockupTranched, _brokerAdmin) {}
 
     /*//////////////////////////////////////////////////////////////////////////
                                       MODIFIERS

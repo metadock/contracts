@@ -40,12 +40,12 @@ contract StreamManager is IStreamManager {
     /// @dev Initializes the address of the {SablierV2LockupLinear} and {SablierV2LockupTranched} contracts
     /// and the address of the broker admin account or contract
     constructor(
-        ISablierV2LockupLinear _sablierLockupLinearDeployment,
-        ISablierV2LockupTranched _sablierLockupTranchedDeployment,
+        ISablierV2LockupLinear _sablierLockupLinear,
+        ISablierV2LockupTranched _sablierLockupTranched,
         address _brokerAdmin
     ) {
-        LOCKUP_LINEAR = _sablierLockupLinearDeployment;
-        LOCKUP_TRANCHED = _sablierLockupTranchedDeployment;
+        LOCKUP_LINEAR = _sablierLockupLinear;
+        LOCKUP_TRANCHED = _sablierLockupTranched;
         brokerAdmin = _brokerAdmin;
     }
 
