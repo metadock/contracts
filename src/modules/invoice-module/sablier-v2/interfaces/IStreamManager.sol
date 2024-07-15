@@ -64,15 +64,15 @@ interface IStreamManager {
     /// @param asset The address of the ERC-20 token to be streamed
     /// @param totalAmount The total amount of ERC-20 tokens to be streamed
     /// @param startTime The timestamp when the stream takes effect
-    /// @param endTime The timestamp by which the stream must be paid
     /// @param recipient The address receiving the ERC-20 tokens
+    /// @param numberOfTranches The number of tranches paid by the stream
     /// @param recurrence The recurrence of each tranche
     function createTranchedStream(
         IERC20 asset,
         uint128 totalAmount,
         uint40 startTime,
-        uint40 endTime,
         address recipient,
+        uint128 numberOfTranches,
         Types.Recurrence recurrence
     ) external returns (uint256 streamId);
 

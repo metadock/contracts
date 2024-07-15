@@ -20,7 +20,7 @@ library Types {
         // slot 0
         Method method;
         Recurrence recurrence;
-        uint24 paymentsLeft;
+        uint40 paymentsLeft;
         address asset;
         // slot 1
         uint128 amount;

@@ -10,7 +10,6 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ud60x18, UD60x18 } from "@prb/math/src/UD60x18.sol";
 
 import { IStreamManager } from "./interfaces/IStreamManager.sol";
-import { Helpers } from "./../libraries/Helpers.sol";
 import { Errors } from "./../libraries/Errors.sol";
 import { Types } from "./../libraries/Types.sol";
 
@@ -83,15 +82,15 @@ contract StreamManager is IStreamManager {
         IERC20 asset,
         uint128 totalAmount,
         uint40 startTime,
-        uint40 endTime,
         address recipient,
+        uint128 numberOfTranches,
         Types.Recurrence recurrence
     ) public returns (uint256 streamId) {
         // Transfer the provided amount of ERC-20 tokens to this contract and approve the Sablier contract to spend it
         _transferFromAndApprove({ asset: asset, spender: address(LOCKUP_TRANCHED), amount: totalAmount });
 
         // Create the Lockup Linear stream
-        streamId = _createTranchedStream(asset, totalAmount, startTime, endTime, recipient, recurrence);
+        streamId = _createTranchedStream(asset, totalAmount, startTime, recipient, numberOfTranches, recurrence);
     }
 
     /// @inheritdoc IStreamManager
@@ -212,12 +211,12 @@ contract StreamManager is IStreamManager {
         IERC20 asset,
         uint128 totalAmount,
         uint40 startTime,
-        uint40 endTime,
         address recipient,
+        uint128 numberOfTranches,
         Types.Recurrence recurrence
     ) internal returns (uint256 streamId) {
         // Declare the params struct
-        LockupTranched.CreateWithDurations memory params;
+        LockupTranched.CreateWithTimestamps memory params;
 
         // Declare the function parameters
         params.sender = msg.sender; // The sender will be able to cancel the stream
@@ -227,9 +226,6 @@ contract StreamManager is IStreamManager {
         params.cancelable = true; // Whether the stream will be cancelable or not
         params.transferable = true; // Whether the stream will be transferable or not
 
-        // Calculate the number of tranches based on the payment interval and the type of recurrence
-        uint128 numberOfTranches = Helpers.computeNumberOfRecurringPayments(recurrence, startTime, endTime);
-
         // Calculate the duration of each tranche based on the payment recurrence
         uint40 durationPerTranche = _computeDurationPerTrache(recurrence);
 
@@ -237,19 +233,22 @@ contract StreamManager is IStreamManager {
         uint128 amountPerTranche = totalAmount / numberOfTranches;
 
         // Create the tranches array
-        params.tranches = new LockupTranched.TrancheWithDuration[](numberOfTranches);
+        params.tranches = new LockupTranched.Tranche[](numberOfTranches);
         for (uint256 i; i < numberOfTranches; ++i) {
-            params.tranches[i] = LockupTranched.TrancheWithDuration({
+            params.tranches[i] = LockupTranched.Tranche({
                 amount: amountPerTranche,
-                duration: durationPerTranche
+                timestamp: startTime + durationPerTranche
             });
+
+            // Jump to the next tranche by adding the duration per tranche timestamp to the start time
+            startTime += durationPerTranche;
         }
 
         // Optional parameter for charging a fee
         params.broker = Broker({ account: brokerAdmin, fee: brokerFee });
 
         // Create the LockupTranched stream
-        streamId = LOCKUP_TRANCHED.createWithDurations(params);
+        streamId = LOCKUP_TRANCHED.createWithTimestamps(params);
     }
 
     function _transferFromAndApprove(IERC20 asset, uint128 amount, address spender) internal {

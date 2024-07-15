@@ -56,7 +56,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
 
         // Checks: the sender implements the ERC-165 interface required by {IContainer}
         bytes4 interfaceId = type(IContainer).interfaceId;
-        if (!IERC165(msg.sender).supportsInterface(interfaceId)) revert Errors.ContainerUnsupportedInterface();
+        if (!IContainer(msg.sender).supportsInterface(interfaceId)) revert Errors.ContainerUnsupportedInterface();
         _;
     }
 
@@ -77,11 +77,11 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
     function createInvoice(Types.Invoice calldata invoice) external onlyContainer returns (uint256 id) {
         // Checks: the amount is non-zero
         if (invoice.payment.amount == 0) {
-            revert Errors.PaymentAmountZero();
+            revert Errors.ZeroPaymentAmount();
         }
 
         // Checks: the start time is stricly lower than the end time
-        if (invoice.startTime >= invoice.endTime) {
+        if (invoice.startTime > invoice.endTime) {
             revert Errors.StartTimeGreaterThanEndTime();
         }
 
@@ -91,10 +91,9 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             revert Errors.EndTimeLowerThanCurrentTime();
         }
 
-        // Checks: validate the input parameters if the invoice must be paid in even transfers
-        if (invoice.payment.method == Types.Method.Transfer) {
-            // Checks: validate the input parameters if the invoice is recurring
-            if (invoice.payment.paymentsLeft > 1) {
+        // Checks: validate the input parameters if the invoice must be paid in even recurring transfers or by a tranched stream
+        if (invoice.payment.method == Types.Method.Transfer || invoice.payment.method == Types.Method.TranchedStream) {
+            if (invoice.payment.recurrence != Types.Recurrence.OneOff) {
                 _checkRecurringTransferInvoiceParams({
                     recurrence: invoice.payment.recurrence,
                     paymentsLeft: invoice.payment.paymentsLeft,
@@ -183,7 +182,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
         // Using unchecked because the number of payments left cannot underflow as the invoice status
         // will be updated to `Paid` once `paymentLeft` is zero
         unchecked {
-            uint24 paymentsLeft = invoice.payment.paymentsLeft - 1;
+            uint40 paymentsLeft = invoice.payment.paymentsLeft - 1;
             _invoices[id].payment.paymentsLeft = paymentsLeft;
             if (paymentsLeft == 0) {
                 _invoices[id].status = Types.Status.Paid;
@@ -196,12 +195,12 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
         if (invoice.payment.asset == address(0)) {
             // Checks: the payment amount matches the invoice value
             if (msg.value < invoice.payment.amount) {
-                revert Errors.InvalidPaymentAmount({ amount: invoice.payment.amount });
+                revert Errors.PaymentAmountLessThanInvoiceValue({ amount: invoice.payment.amount });
             }
 
             // Interactions: pay the recipient with native token (ETH)
             (bool success, ) = payable(invoice.recipient).call{ value: invoice.payment.amount }("");
-            if (!success) revert Errors.PaymentFailed();
+            if (!success) revert Errors.NativeTokenPaymentFailed();
         } else {
             // Interactions: pay the recipient with the ERC-20 token
             IERC20(invoice.payment.asset).safeTransfer({
@@ -228,8 +227,8 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             asset: IERC20(invoice.payment.asset),
             totalAmount: invoice.payment.amount,
             startTime: invoice.startTime,
-            endTime: invoice.endTime,
             recipient: invoice.recipient,
+            numberOfTranches: invoice.payment.paymentsLeft,
             recurrence: invoice.payment.recurrence
         });
     }
@@ -241,8 +240,15 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
         uint40 startTime,
         uint40 endTime
     ) internal pure {
-        // Calculate the expected number of payments based on the invoice recurrence and payment interval
-        uint40 numberOfPayments = Helpers.computeNumberOfRecurringPayments(recurrence, startTime, endTime);
+        // Checks: the invoice payment interval matches the recurrence type
+        // This cannot underflow as the start time is stricly lower than the end time when this call executes
+        uint40 interval;
+        unchecked {
+            interval = endTime - startTime;
+        }
+
+        // Check and calculate the expected number of payments based on the invoice recurrence and payment interval
+        uint40 numberOfPayments = Helpers.checkAndComputeNumberOfRecurringPayments(recurrence, interval);
 
         // Checks: the specified number of payments is valid
         if (paymentsLeft != numberOfPayments) {
