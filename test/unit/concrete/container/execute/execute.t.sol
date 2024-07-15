@@ -2,8 +2,6 @@
 pragma solidity ^0.8.26;
 
 import { Container_Unit_Concrete_Test } from "../Container.t.sol";
-import { Types as InvoiceModuleTypes } from "./../../../../../src/modules/invoice-module/libraries/Types.sol";
-import { Helpers } from "../../../../utils/Helpers.sol";
 import { Errors } from "../../../../utils/Errors.sol";
 import { Events } from "../../../../utils/Events.sol";
 
@@ -20,7 +18,7 @@ contract Execute_Unit_Concrete_Test is Container_Unit_Concrete_Test {
         vm.expectRevert(Errors.Unauthorized.selector);
 
         // Run the test
-        container.execute({ module: address(invoiceModule), value: 0, data: "" });
+        container.execute({ module: address(mockModule), value: 0, data: "" });
     }
 
     modifier whenCallerOwner() {
@@ -57,7 +55,7 @@ contract Execute_Unit_Concrete_Test is Container_Unit_Concrete_Test {
 
         // Expect the {ModuleExecutionFailed} event to be emitted
         vm.expectEmit();
-        emit Events.ModuleExecutionFailed({ module: address(mockModule), value: 0, data: wrongData });
+        emit Events.ModuleExecutionFailed({ module: address(mockModule), value: 0, data: wrongData, error: "" });
 
         // Run the test
         container.execute({ module: address(mockModule), value: 0, data: wrongData });
