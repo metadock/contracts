@@ -28,7 +28,7 @@ interface IContainer is IERC165 {
     /// @param module The address of the module that was executed
     /// @param value The value sent to the module address required for the call
     /// @param data The ABI-encoded method called on the module
-    event ModuleExecutionFailed(address indexed module, uint256 value, bytes data);
+    event ModuleExecutionFailed(address indexed module, uint256 value, bytes data, bytes error);
 
     /// @notice Emitted when a module execution is successful
     /// @param module The address of the module that was executed

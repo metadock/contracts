@@ -9,11 +9,13 @@ import { IContainer } from "./interfaces/IContainer.sol";
 import { ModuleManager } from "./ModuleManager.sol";
 import { IModuleManager } from "./interfaces/IModuleManager.sol";
 import { Errors } from "./libraries/Errors.sol";
+import { ExcessivelySafeCall } from "@nomad-xyz/excessively-safe-call/src/ExcessivelySafeCall.sol";
 
 /// @title Container
 /// @notice See the documentation in {IContainer}
 contract Container is IContainer, ModuleManager {
     using SafeERC20 for IERC20;
+    using ExcessivelySafeCall for address;
 
     /*//////////////////////////////////////////////////////////////////////////
                                   PRIVATE STORAGE
@@ -60,22 +62,26 @@ contract Container is IContainer, ModuleManager {
         address module,
         uint256 value,
         bytes memory data
-    ) external onlyOwner onlyEnabledModule(module) returns (bool _success) {
+    ) external onlyOwner onlyEnabledModule(module) returns (bool success) {
         // Allocate all the gas to the executed module method
         uint256 txGas = gasleft();
 
         // Execute the call via assembly to avoid returnbomb attacks
         // See https://github.com/nomad-xyz/ExcessivelySafeCall
         //
-        // Do not account for the returned data but only for the `_success` boolean
-        assembly {
-            // See https://www.evm.codes/#f1?fork=cancun
-            _success := call(txGas, module, value, add(data, 0x20), mload(data), 0, 0)
-        }
+        // Account for the returned data only if the `_success` boolean is false
+        // in which case revert with the error message
+        bytes memory result;
+        (success, result) = module.excessivelySafeCall({ _gas: txGas, _value: 0, _maxCopy: 4, _calldata: data });
 
-        // Log the corresponding event whether the call was successful or not
-        if (_success) emit ModuleExecutionSucceded(module, value, data);
-        else emit ModuleExecutionFailed(module, value, data);
+        if (!success) {
+            emit ModuleExecutionFailed(module, value, data, result);
+
+            // Revert with the error
+            assembly {
+                revert(add(result, 0x20), result)
+            }
+        } else emit ModuleExecutionSucceded(module, value, data);
     }
 
     /// @inheritdoc IContainer
