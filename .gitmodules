@@ -10,3 +10,6 @@
 [submodule "lib/prb-math"]
 	path = lib/prb-math
 	url = https://github.com/PaulRBerg/prb-math
+[submodule "lib/nomad-xyz/excessively-safe-call"]
+	path = lib/nomad-xyz/excessively-safe-call
+	url = https://github.com/nomad-xyz/ExcessivelySafeCall
