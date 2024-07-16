@@ -53,9 +53,8 @@ contract Execute_Unit_Concrete_Test is Container_Unit_Concrete_Test {
         // Alter the `createModuleItem` method signature by adding an invalid `uint256` field
         bytes memory wrongData = abi.encodeWithSignature("createModuleItem(uint256)", 1);
 
-        // Expect the {ModuleExecutionFailed} event to be emitted
-        vm.expectEmit();
-        emit Events.ModuleExecutionFailed({ module: address(mockModule), value: 0, data: wrongData, error: "" });
+        // Expect the call to be reverted due to invalid method signature
+        vm.expectRevert();
 
         // Run the test
         container.execute({ module: address(mockModule), value: 0, data: wrongData });
