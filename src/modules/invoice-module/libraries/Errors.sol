@@ -29,9 +29,6 @@ library Errors {
     /// @notice Thrown when a payment in the native token (ETH) fails
     error NativeTokenPaymentFailed();
 
-    /// @notice Thrown when the number of recurring payments set for a recurring transfer invoice is invalid
-    error InvalidNumberOfPayments(uint40 expectedNumber);
-
     /// @notice Thrown when a linear or tranched stream is created with the native token as the payment asset
     error OnlyERC20StreamsAllowed();
 
@@ -44,6 +41,9 @@ library Errors {
     /// @notice Thrown when the payment interval (endTime - startTime) is too short for the selected recurrence
     /// i.e. recurrence is set to weekly but interval is shorter than 1 week
     error PaymentIntervalTooShortForSelectedRecurrence();
+
+    /// @notice Thrown when a tranched stream has a one-off recurrence type
+    error TranchedStreamInvalidOneOffRecurence();
 
     /*//////////////////////////////////////////////////////////////////////////
                                     STREAM-MANAGER

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierV2LockupLinear } from "@sablier/v2-core/src/interfaces/ISablierV2LockupLinear.sol";
@@ -91,19 +90,36 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             revert Errors.EndTimeInThePast();
         }
 
-        // Checks: validate the input parameters if the invoice must be paid in even recurring transfers or by a tranched stream
-        if (invoice.payment.method == Types.Method.Transfer || invoice.payment.method == Types.Method.TranchedStream) {
-            if (invoice.payment.recurrence != Types.Recurrence.OneOff) {
-                _checkRecurringTransferInvoiceParams({
-                    recurrence: invoice.payment.recurrence,
-                    paymentsLeft: invoice.payment.paymentsLeft,
-                    startTime: invoice.startTime,
-                    endTime: invoice.endTime
-                });
+        // Checks: the recurrence type is not equal to one-off if dealing with a tranched stream-based invoice
+        if (invoice.payment.method == Types.Method.TranchedStream) {
+            // The recurrence cannot be set to one-off
+            if (invoice.payment.recurrence == Types.Recurrence.OneOff) {
+                revert Errors.TranchedStreamInvalidOneOffRecurence();
             }
-            // Or by using a linear or tranched stream in which case allow only ERC-20 assets
-        } else if (invoice.payment.asset == address(0)) {
-            revert Errors.OnlyERC20StreamsAllowed();
+        }
+
+        // Gets the number of payments for the invoice based on the payment method, interval and recurrence type
+        //
+        // Notes:
+        // - There should be only one payment when dealing with a one-off transfer-based invoice
+        // - When dealing with a recurring transfer or tranched stream, the number of payments must be calculated based
+        // on the payment interval (endTime - startTime) and recurrence type
+        uint40 numberOfPayments;
+        if (invoice.payment.method == Types.Method.Transfer && invoice.payment.recurrence == Types.Recurrence.OneOff) {
+            numberOfPayments = 1;
+        } else if (invoice.payment.method != Types.Method.LinearStream) {
+            numberOfPayments = _checkAndComputeNumberOfPayments({
+                recurrence: invoice.payment.recurrence,
+                startTime: invoice.startTime,
+                endTime: invoice.endTime
+            });
+        }
+
+        // Checks: the asset is different than the native token if dealing with either a linear or tranched stream-based invoice
+        if (invoice.payment.method != Types.Method.Transfer) {
+            if (invoice.payment.asset == address(0)) {
+                revert Errors.OnlyERC20StreamsAllowed();
+            }
         }
 
         // Get the next invoice ID
@@ -118,7 +134,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             payment: Types.Payment({
                 recurrence: invoice.payment.recurrence,
                 method: invoice.payment.method,
-                paymentsLeft: invoice.payment.paymentsLeft,
+                paymentsLeft: numberOfPayments,
                 amount: invoice.payment.amount,
                 asset: invoice.payment.asset,
                 streamId: 0
@@ -233,13 +249,13 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
         });
     }
 
-    /// @dev Validates the input parameters if the invoice is recurring and must be paid in even transfers
-    function _checkRecurringTransferInvoiceParams(
+    /// @notice Calculates the number of payments to be made for a recurring transfer and tranched stream-based invoice
+    /// @dev Reverts if the number of payments is zero, indicating that either the interval or recurrence type was set incorrectly
+    function _checkAndComputeNumberOfPayments(
         Types.Recurrence recurrence,
-        uint40 paymentsLeft,
         uint40 startTime,
         uint40 endTime
-    ) internal pure {
+    ) internal pure returns (uint40 numberOfPayments) {
         // Checks: the invoice payment interval matches the recurrence type
         // This cannot underflow as the start time is stricly lower than the end time when this call executes
         uint40 interval;
@@ -248,11 +264,11 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
         }
 
         // Check and calculate the expected number of payments based on the invoice recurrence and payment interval
-        uint40 numberOfPayments = Helpers.checkAndComputeNumberOfRecurringPayments(recurrence, interval);
+        numberOfPayments = Helpers.computeNumberOfPayments(recurrence, interval);
 
-        // Checks: the specified number of payments is valid
-        if (paymentsLeft != numberOfPayments) {
-            revert Errors.InvalidNumberOfPayments({ expectedNumber: numberOfPayments });
+        // Revert if there are zero payments to be made since the payment method due to invalid interval and recurrence type
+        if (numberOfPayments == 0) {
+            revert Errors.PaymentIntervalTooShortForSelectedRecurrence();
         }
     }
 }
