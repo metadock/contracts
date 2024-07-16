@@ -19,12 +19,6 @@ abstract contract Events {
     /// @param amount The amount of the withdrawn ERC-20 token
     event AssetWithdrawn(address indexed sender, address indexed asset, uint256 amount);
 
-    /// @notice Emitted when a module execution fails
-    /// @param module The address of the module that was executed
-    /// @param value The value sent to the module address required for the call
-    /// @param data The ABI-encoded method called on the module
-    event ModuleExecutionFailed(address indexed module, uint256 value, bytes data, bytes4 error);
-
     /// @notice Emitted when a module execution is successful
     /// @param module The address of the module that was executed
     /// @param value The value sent to the module address required for the call

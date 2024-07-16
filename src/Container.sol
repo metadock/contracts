@@ -66,21 +66,18 @@ contract Container is IContainer, ModuleManager {
         // Allocate all the gas to the executed module method
         uint256 txGas = gasleft();
 
-        // Execute the call via assembly to avoid returnbomb attacks
+        // Execute the call via assembly and get only the first 4 bytes of the returndata
+        // which will be the selector of the error in case of a revert in the module contract
         // See https://github.com/nomad-xyz/ExcessivelySafeCall
-        //
-        // Account for the returned data only if the `_success` boolean is false
-        // in which case revert with the error message
         bytes memory result;
         (success, result) = module.excessivelySafeCall({ _gas: txGas, _value: 0, _maxCopy: 4, _calldata: data });
 
+        // Revert with the same error returned by the module contract if the call failed
         if (!success) {
-            emit ModuleExecutionFailed(module, value, data, result);
-
-            // Revert with the error
             assembly {
-                revert(add(result, 0x20), result)
+                revert(add(result, 0x20), 4)
             }
+            // Otherwise log the execution success
         } else emit ModuleExecutionSucceded(module, value, data);
     }
 
