@@ -47,7 +47,7 @@ library Errors {
     error ContainerUnsupportedInterface();
 
     /// @notice Thrown when the end time of an invoice is in the past
-    error EndTimeLowerThanCurrentTime();
+    error EndTimeInThePast();
 
     /// @notice Thrown when the start time is later than the end time
     error StartTimeGreaterThanEndTime();
@@ -72,6 +72,10 @@ library Errors {
 
     /// @notice Thrown when a payer attempts to pay a canceled invoice
     error InvoiceCanceled();
+
+    /// @notice Thrown when the payment interval (endTime - startTime) is too short for the selected recurrence
+    /// i.e. recurrence is set to weekly but interval is shorter than 1 week
+    error PaymentIntervalTooShortForSelectedRecurrence();
 
     /*//////////////////////////////////////////////////////////////////////////
                                     STREAM-MANAGER

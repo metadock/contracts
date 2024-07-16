@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import { Types } from "./../../src/modules/invoice-module/libraries/Types.sol";
+
 /// @notice Abstract contract to store all the events emitted in the tested contracts
 abstract contract Events {
     /*//////////////////////////////////////////////////////////////////////////
@@ -36,4 +38,24 @@ abstract contract Events {
     /// @notice Emitted when a module is disabled on the container
     /// @param module The address of the disabled module
     event ModuleDisabled(address indexed module);
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                    INVOICE
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when a regular or recurring invoice is created
+    /// @param id The ID of the invoice
+    /// @param recipient The address receiving the payment
+    /// @param status The status of the invoice
+    /// @param startTime The timestamp when the invoice takes effect
+    /// @param endTime The timestamp by which the invoice must be paid
+    /// @param payment Struct representing the payment details associated with the invoice
+    event InvoiceCreated(
+        uint256 id,
+        address indexed recipient,
+        Types.Status status,
+        uint40 startTime,
+        uint40 endTime,
+        Types.Payment payment
+    );
 }
