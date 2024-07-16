@@ -15,7 +15,7 @@ library Errors {
     error ContainerUnsupportedInterface();
 
     /// @notice Thrown when the end time of an invoice is in the past
-    error EndTimeLowerThanCurrentTime();
+    error EndTimeInThePast();
 
     /// @notice Thrown when the start time is later than the end time
     error StartTimeGreaterThanEndTime();
