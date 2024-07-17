@@ -166,6 +166,11 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
         // Load the invoice from storage
         Types.Invoice memory invoice = _invoices[id];
 
+        // Checks: the invoice is not null
+        if (invoice.recipient == address(0)) {
+            revert Errors.InvoiceNull();
+        }
+
         // Checks: the invoice is not already paid or canceled
         if (invoice.status == Types.Status.Paid) {
             revert Errors.InvoiceAlreadyPaid();
@@ -186,6 +191,43 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
 
         // Log the payment transaction
         emit InvoicePaid({ id: id, payer: msg.sender, status: invoice.status, payment: invoice.payment });
+    }
+
+    /// @inheritdoc IInvoiceModule
+    function cancelInvoice(uint256 id) external {
+        // Load the invoice from storage
+        Types.Invoice memory invoice = _invoices[id];
+
+        // Checks: the invoice is paid or already canceled
+        if (invoice.status == Types.Status.Paid) {
+            revert Errors.CannotCancelPaidInvoice();
+        } else if (invoice.status == Types.Status.Canceled) {
+            revert Errors.CannotCancelCanceledInvoice();
+        }
+
+        // Checks: the `msg.sender` is the creator if dealing with a transfer-based invoice
+        //
+        // Notes:
+        // - for a linear or tranched stream-based invoice, the `msg.sender` is checked in the
+        // {SablierV2Lockup} `cancel` method
+        if (invoice.payment.method == Types.Method.Transfer) {
+            if (invoice.recipient != msg.sender) {
+                revert Errors.InvoiceOwnerUnauthorized();
+            }
+        }
+
+        // Effects: cancel the stream accordingly depending on its type
+        if (invoice.payment.method == Types.Method.LinearStream) {
+            cancelLinearStream({ streamId: invoice.payment.streamId });
+        } else if (invoice.payment.method == Types.Method.TranchedStream) {
+            cancelTranchedStream({ streamId: invoice.payment.streamId });
+        }
+
+        // Effects: mark the invoice as canceled
+        _invoices[id].status = Types.Status.Canceled;
+
+        // Log the invoice cancelation
+        emit InvoiceCanceled(id);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -219,7 +261,8 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             if (!success) revert Errors.NativeTokenPaymentFailed();
         } else {
             // Interactions: pay the recipient with the ERC-20 token
-            IERC20(invoice.payment.asset).safeTransfer({
+            IERC20(invoice.payment.asset).safeTransferFrom({
+                from: msg.sender,
                 to: address(invoice.recipient),
                 value: invoice.payment.amount
             });

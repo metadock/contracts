@@ -10,7 +10,7 @@ interface IInvoiceModule {
                                        EVENTS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Emitted when a regular or recurring invoice is created
+    /// @notice Emitted when an invoice is created
     /// @param id The ID of the invoice
     /// @param recipient The address receiving the payment
     /// @param status The status of the invoice
@@ -26,12 +26,16 @@ interface IInvoiceModule {
         Types.Payment payment
     );
 
-    /// @notice Emitted when a regular or recurring invoice is paid
+    /// @notice Emitted when an invoice is paid
     /// @param id The ID of the invoice
     /// @param payer The address of the payer
     /// @param status The status of the invoice
     /// @param payment Struct representing the payment details associated with the invoice
     event InvoicePaid(uint256 indexed id, address indexed payer, Types.Status status, Types.Payment payment);
+
+    /// @notice Emitted when an invoice is canceled
+    /// @param id The ID of the invoice
+    event InvoiceCanceled(uint256 indexed id);
 
     /*//////////////////////////////////////////////////////////////////////////
                                  CONSTANT FUNCTIONS
@@ -64,4 +68,17 @@ interface IInvoiceModule {
     ///
     /// @param id The ID of the invoice to pay
     function payInvoice(uint256 id) external payable;
+
+    /// @notice Cancels the `id` invoice
+    ///
+    /// Notes:
+    /// - if the invoice has a linear or tranched stream payment method, the streaming flow will be
+    /// stopped and the remaining funds will be refunded to the stream payer
+    ///
+    /// Important:
+    /// - if the invoice has a linear or tranched stream payment method, the portion that has already
+    /// been streamed is NOT automatically transferred
+    ///
+    /// @param id The ID of the invoice
+    function cancelInvoice(uint256 id) external;
 }
