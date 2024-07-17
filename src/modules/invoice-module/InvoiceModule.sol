@@ -190,7 +190,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
         }
 
         // Log the payment transaction
-        emit InvoicePaid({ id: id, payer: msg.sender, status: invoice.status, payment: invoice.payment });
+        emit InvoicePaid({ id: id, payer: msg.sender, status: _invoices[id].status, payment: _invoices[id].payment });
     }
 
     /// @inheritdoc IInvoiceModule
