@@ -7,6 +7,7 @@ import { Test } from "forge-std/Test.sol";
 import { MockERC20NoReturn } from "./mocks/MockERC20NoReturn.sol";
 import { MockNonCompliantContainer } from "./mocks/MockNonCompliantContainer.sol";
 import { MockModule } from "./mocks/MockModule.sol";
+import { MockBadReceiver } from "./mocks/MockBadReceiver.sol";
 import { Container } from "./../src/Container.sol";
 
 abstract contract Base_Test is Test, Events {
@@ -24,6 +25,7 @@ abstract contract Base_Test is Test, Events {
     MockERC20NoReturn internal usdt;
     MockModule internal mockModule;
     MockNonCompliantContainer internal mockNonCompliantContainer;
+    MockBadReceiver internal mockBadReceiver;
 
     /*//////////////////////////////////////////////////////////////////////////
                                   SET-UP FUNCTION
@@ -39,6 +41,7 @@ abstract contract Base_Test is Test, Events {
         // Deploy test contracts
         mockModule = new MockModule();
         mockNonCompliantContainer = new MockNonCompliantContainer({ _owner: users.admin });
+        mockBadReceiver = new MockBadReceiver();
 
         // Label the test contracts so we can easily track them
         vm.label({ account: address(usdt), newLabel: "USDT" });
@@ -63,7 +66,7 @@ abstract contract Base_Test is Test, Events {
     function createUser(string memory name) internal returns (address payable) {
         address payable user = payable(makeAddr(name));
         vm.deal({ account: user, newBalance: 100 ether });
-        deal({ token: address(usdt), to: user, give: 1000000e6 });
+        deal({ token: address(usdt), to: user, give: 10000000e18 });
 
         return user;
     }
