@@ -58,4 +58,15 @@ abstract contract Events {
         uint40 endTime,
         Types.Payment payment
     );
+
+    /// @notice Emitted when an invoice is paid
+    /// @param id The ID of the invoice
+    /// @param payer The address of the payer
+    /// @param status The status of the invoice
+    /// @param payment Struct representing the payment details associated with the invoice
+    event InvoicePaid(uint256 indexed id, address indexed payer, Types.Status status, Types.Payment payment);
+
+    /// @notice Emitted when an invoice is canceled
+    /// @param id The ID of the invoice
+    event InvoiceCanceled(uint256 indexed id);
 }
