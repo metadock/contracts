@@ -3,6 +3,7 @@ pragma solidity >=0.8.22;
 
 import { ISablierV2LockupLinear } from "@sablier/v2-core/src/interfaces/ISablierV2LockupLinear.sol";
 import { ISablierV2LockupTranched } from "@sablier/v2-core/src/interfaces/ISablierV2LockupTranched.sol";
+import { LockupLinear, LockupTranched } from "@sablier/v2-core/src/types/DataTypes.sol";
 import { ISablierV2Lockup } from "@sablier/v2-core/src/interfaces/ISablierV2Lockup.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { UD60x18 } from "@prb/math/src/UD60x18.sol";
@@ -41,6 +42,14 @@ interface IStreamManager {
     /// @notice The broker fee charged to create Sablier V2 stream
     /// @dev See the `UD60x18` type definition in the `@prb/math/src/ud60x18/ValueType.sol file`
     function brokerFee() external view returns (UD60x18);
+
+    /// @notice Retrieves a linear stream details according to the {LockupLinear.StreamLL} struct
+    /// @param streamId The ID of the stream to be retrieved
+    function getLinearStream(uint256 streamId) external view returns (LockupLinear.StreamLL memory stream);
+
+    /// @notice Retrieves a tranched stream details according to the {LockupTranched.StreamLT} struct
+    /// @param streamId The ID of the stream to be retrieved
+    function getTranchedStream(uint256 streamId) external view returns (LockupTranched.StreamLT memory stream);
 
     /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
@@ -82,44 +91,17 @@ interface IStreamManager {
     /// - The new fee will be applied only to the new streams hence it can't be retrospectively updated
     ///
     /// @param newBrokerFee The new broker fee
-    function updateBrokerFee(UD60x18 newBrokerFee) external;
+    function updateStreamBrokerFee(UD60x18 newBrokerFee) external;
 
-    /// @notice See the documentation in {ISablierV2Lockup}
-    function withdraw(ISablierV2Lockup sablier, uint256 streamId, address to, uint128 amount) external;
+    /// @notice See the documentation in {ISablierV2Lockup-withdraw}
+    function withdrawLinearStream(uint256 streamId, address to, uint128 amount) external;
 
-    /// @notice See the documentation in {ISablierV2Lockup}
-    function withdrawableAmountOf(
-        ISablierV2Lockup sablier,
-        uint256 streamId
-    ) external view returns (uint128 withdrawableAmount);
+    /// @notice See the documentation in {ISablierV2Lockup-withdraw}
+    function withdrawTranchedStream(uint256 streamId, address to, uint128 amount) external;
 
-    /// @notice See the documentation in {ISablierV2Lockup}
-    function withdrawMax(
-        ISablierV2Lockup sablier,
-        uint256 streamId,
-        address to
-    ) external returns (uint128 withdrawnAmount);
+    /// @notice See the documentation in {ISablierV2Lockup-cancel}
+    function cancelLinearStream(uint256 streamId) external;
 
-    /// @notice See the documentation in {ISablierV2Lockup}
-    function withdrawMultiple(
-        ISablierV2Lockup sablier,
-        uint256[] calldata streamIds,
-        uint128[] calldata amounts
-    ) external;
-
-    /// @notice See the documentation in {ISablierV2Lockup}
-    function withdrawMaxAndTransfer(
-        ISablierV2Lockup sablier,
-        uint256 streamId,
-        address newRecipient
-    ) external returns (uint128 withdrawnAmount);
-
-    /// @notice See the documentation in {ISablierV2Lockup}
-    function cancel(ISablierV2Lockup sablier, uint256 streamId) external;
-
-    /// @notice See the documentation in {ISablierV2Lockup}
-    function cancelMultiple(ISablierV2Lockup sablier, uint256[] calldata streamIds) external;
-
-    /// @notice See the documentation in {ISablierV2Lockup}
-    function renounce(ISablierV2Lockup sablier, uint256 streamId) external;
+    /// @notice See the documentation in {ISablierV2Lockup-cancel}
+    function cancelTranchedStream(uint256 streamId) external;
 }

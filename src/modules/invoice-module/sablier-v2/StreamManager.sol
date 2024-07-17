@@ -71,7 +71,7 @@ contract StreamManager is IStreamManager {
         address recipient
     ) public returns (uint256 streamId) {
         // Transfer the provided amount of ERC-20 tokens to this contract and approve the Sablier contract to spend it
-        _transferFromAndApprove({ asset: asset, spender: address(LOCKUP_LINEAR), amount: totalAmount });
+        _transferFromAndApprove({ asset: asset, amount: totalAmount, spender: address(LOCKUP_LINEAR) });
 
         // Create the Lockup Linear stream
         streamId = _createLinearStream(asset, totalAmount, startTime, endTime, recipient);
@@ -87,14 +87,14 @@ contract StreamManager is IStreamManager {
         Types.Recurrence recurrence
     ) public returns (uint256 streamId) {
         // Transfer the provided amount of ERC-20 tokens to this contract and approve the Sablier contract to spend it
-        _transferFromAndApprove({ asset: asset, spender: address(LOCKUP_TRANCHED), amount: totalAmount });
+        _transferFromAndApprove({ asset: asset, amount: totalAmount, spender: address(LOCKUP_TRANCHED) });
 
         // Create the Lockup Linear stream
         streamId = _createTranchedStream(asset, totalAmount, startTime, recipient, numberOfTranches, recurrence);
     }
 
     /// @inheritdoc IStreamManager
-    function updateBrokerFee(UD60x18 newBrokerFee) public onlyBrokerAdmin {
+    function updateStreamBrokerFee(UD60x18 newBrokerFee) public onlyBrokerAdmin {
         // Log the broker fee update
         emit BrokerFeeUpdated({ oldFee: brokerFee, newFee: newBrokerFee });
 
@@ -107,34 +107,13 @@ contract StreamManager is IStreamManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IStreamManager
-    function withdraw(ISablierV2Lockup sablier, uint256 streamId, address to, uint128 amount) external {
-        sablier.withdraw(streamId, to, amount);
+    function withdrawLinearStream(uint256 streamId, address to, uint128 amount) public {
+        _withdrawStream({ sablier: LOCKUP_LINEAR, streamId: streamId, to: to, amount: amount });
     }
 
     /// @inheritdoc IStreamManager
-    function withdrawableAmountOf(
-        ISablierV2Lockup sablier,
-        uint256 streamId
-    ) external view returns (uint128 withdrawableAmount) {
-        withdrawableAmount = sablier.withdrawableAmountOf(streamId);
-    }
-
-    /// @inheritdoc IStreamManager
-    function withdrawMax(
-        ISablierV2Lockup sablier,
-        uint256 streamId,
-        address to
-    ) external returns (uint128 withdrawnAmount) {
-        withdrawnAmount = sablier.withdrawMax(streamId, to);
-    }
-
-    /// @inheritdoc IStreamManager
-    function withdrawMultiple(
-        ISablierV2Lockup sablier,
-        uint256[] calldata streamIds,
-        uint128[] calldata amounts
-    ) external {
-        sablier.withdrawMultiple(streamIds, amounts);
+    function withdrawTranchedStream(uint256 streamId, address to, uint128 amount) public {
+        _withdrawStream({ sablier: LOCKUP_TRANCHED, streamId: streamId, to: to, amount: amount });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -142,35 +121,27 @@ contract StreamManager is IStreamManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IStreamManager
-    function cancel(ISablierV2Lockup sablier, uint256 streamId) external {
-        sablier.cancel(streamId);
+    function cancelLinearStream(uint256 streamId) public {
+        _cancelStream({ sablier: LOCKUP_LINEAR, streamId: streamId });
     }
 
     /// @inheritdoc IStreamManager
-    function cancelMultiple(ISablierV2Lockup sablier, uint256[] calldata streamIds) external {
-        sablier.cancelMultiple(streamIds);
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                RENOUNCE FUNCTIONS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @inheritdoc IStreamManager
-    function renounce(ISablierV2Lockup sablier, uint256 streamId) external {
-        sablier.renounce(streamId);
+    function cancelTranchedStream(uint256 streamId) public {
+        _cancelStream({ sablier: LOCKUP_TRANCHED, streamId: streamId });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                                TRANSFER FUNCTIONS
+                                CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IStreamManager
-    function withdrawMaxAndTransfer(
-        ISablierV2Lockup sablier,
-        uint256 streamId,
-        address newRecipient
-    ) external returns (uint128 withdrawnAmount) {
-        withdrawnAmount = sablier.withdrawMaxAndTransfer(streamId, newRecipient);
+    function getLinearStream(uint256 streamId) public view returns (LockupLinear.StreamLL memory stream) {
+        stream = LOCKUP_LINEAR.getStream(streamId);
+    }
+
+    /// @inheritdoc IStreamManager
+    function getTranchedStream(uint256 streamId) public view returns (LockupTranched.StreamLT memory stream) {
+        stream = LOCKUP_TRANCHED.getStream(streamId);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -251,6 +222,18 @@ contract StreamManager is IStreamManager {
         streamId = LOCKUP_TRANCHED.createWithTimestamps(params);
     }
 
+    /// @dev Withdraws from either a linear or tranched stream
+    function _withdrawStream(ISablierV2Lockup sablier, uint256 streamId, address to, uint128 amount) internal {
+        sablier.withdraw(streamId, to, amount);
+    }
+
+    /// @dev Cancels the `streamId` stream
+    function _cancelStream(ISablierV2Lockup sablier, uint256 streamId) internal {
+        sablier.cancel(streamId);
+    }
+
+    /// @dev Transfers the `amount` of `asset` tokens to this address (or the contract inherting from)
+    /// and approves either the `SablierV2LockupLinear` or `SablierV2LockupTranched` to spend the amount
     function _transferFromAndApprove(IERC20 asset, uint128 amount, address spender) internal {
         // Transfer the provided amount of ERC-20 tokens to this contract
         asset.transferFrom(msg.sender, address(this), amount);
@@ -259,6 +242,7 @@ contract StreamManager is IStreamManager {
         asset.approve(spender, amount);
     }
 
+    /// @dev Calculates the duration of each tranches from a tranched stream based on a recurrence
     function _computeDurationPerTrache(Types.Recurrence recurrence) internal pure returns (uint40 duration) {
         if (recurrence == Types.Recurrence.Weekly) duration = 1 weeks;
         else if (recurrence == Types.Recurrence.Monthly) duration = 4 weeks;
