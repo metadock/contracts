@@ -1,5 +1,6 @@
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
 @sablier/v2-core/=lib/v2-core/
 @prb/math/=lib/prb-math/
+@nomad-xyz/excessively-safe-call/=lib/nomad-xyz/excessively-safe-call/
 ds-test/=lib/openzeppelin-contracts/lib/forge-std/lib/ds-test/src/
 forge-std/=lib/forge-std/src/

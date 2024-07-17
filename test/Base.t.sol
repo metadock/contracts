@@ -5,13 +5,9 @@ import { Events } from "./utils/Events.sol";
 import { Users } from "./utils/Types.sol";
 import { Test } from "forge-std/Test.sol";
 import { MockERC20NoReturn } from "./mocks/MockERC20NoReturn.sol";
+import { MockNonCompliantContainer } from "./mocks/MockNonCompliantContainer.sol";
 import { MockModule } from "./mocks/MockModule.sol";
 import { Container } from "./../src/Container.sol";
-import { InvoiceModule } from "./../src/modules/invoice-module/InvoiceModule.sol";
-import { SablierV2LockupLinear } from "@sablier/v2-core/src/SablierV2LockupLinear.sol";
-import { SablierV2LockupTranched } from "@sablier/v2-core/src/SablierV2LockupTranched.sol";
-import { SablierV2Lockup } from "@sablier/v2-core/src/abstracts/SablierV2Lockup.sol";
-import { NFTDescriptorMock } from "@sablier/v2-core/test/mocks/NFTDescriptorMock.sol";
 
 abstract contract Base_Test is Test, Events {
     /*//////////////////////////////////////////////////////////////////////////
@@ -24,16 +20,10 @@ abstract contract Base_Test is Test, Events {
                                    TEST CONTRACTS
     //////////////////////////////////////////////////////////////////////////*/
 
-    InvoiceModule internal invoiceModule;
     Container internal container;
     MockERC20NoReturn internal usdt;
     MockModule internal mockModule;
-
-    // Sablier V2 related test contracts
-    NFTDescriptorMock internal mockNFTDescriptor;
-    SablierV2LockupLinear internal sablierV2LockupLinear;
-    SablierV2LockupTranched internal sablierV2LockupTranched;
-    SablierV2Lockup internal sablier;
+    MockNonCompliantContainer internal mockNonCompliantContainer;
 
     /*//////////////////////////////////////////////////////////////////////////
                                   SET-UP FUNCTION
@@ -48,10 +38,12 @@ abstract contract Base_Test is Test, Events {
 
         // Deploy test contracts
         mockModule = new MockModule();
+        mockNonCompliantContainer = new MockNonCompliantContainer({ _owner: users.admin });
 
         // Label the test contracts so we can easily track them
         vm.label({ account: address(usdt), newLabel: "USDT" });
         vm.label({ account: address(mockModule), newLabel: "MockModule" });
+        vm.label({ account: address(mockNonCompliantContainer), newLabel: "MockNonCompliantContainer" });
     }
 
     /*//////////////////////////////////////////////////////////////////////////

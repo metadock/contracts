@@ -1,44 +1,125 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.22;
 
+import { ISablierV2LockupLinear } from "@sablier/v2-core/src/interfaces/ISablierV2LockupLinear.sol";
+import { ISablierV2LockupTranched } from "@sablier/v2-core/src/interfaces/ISablierV2LockupTranched.sol";
 import { ISablierV2Lockup } from "@sablier/v2-core/src/interfaces/ISablierV2Lockup.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { UD60x18 } from "@prb/math/src/UD60x18.sol";
+import { Types } from "./../../libraries/Types.sol";
 
 /// @title IStreamManager
-/// @notice Contract responsible to handle multiple management actions such as withdraw, cancel or renounce stream and transfer ownership
-/// @dev This interface is a subset of the {ISablierV2Lockup} interface
+/// @notice Contract used to create and manage Sablier V2 compatible streams
+/// @dev This code is referenced in the docs: https://docs.sablier.com/concepts/protocol/stream-types
 interface IStreamManager {
     /*//////////////////////////////////////////////////////////////////////////
-                                CONSTANT FUNCTIONS
+                                       EVENTS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice The address of the {SablierV2Lockup} contract used to handle streams management
-    function sablier() external view returns (ISablierV2Lockup);
+    /// @notice Emitted when the broker fee is updated
+    /// @param oldFee The old broker fee
+    /// @param newFee The new broker fee
+    event BrokerFeeUpdated(UD60x18 oldFee, UD60x18 newFee);
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                 CONSTANT FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice The address of the {SablierV2LockupLinear} contract used to create linear streams
+    /// @dev This is initialized at construction time and it might be different depending on the deployment chain
+    /// See https://docs.sablier.com/contracts/v2/deployments
+    function LOCKUP_LINEAR() external view returns (ISablierV2LockupLinear);
+
+    /// @notice The address of the {SablierV2LockupTranched} contract used to create tranched streams
+    /// @dev This is initialized at construction time and it might be different depending on the deployment chain
+    /// See https://docs.sablier.com/contracts/v2/deployments
+    function LOCKUP_TRANCHED() external view returns (ISablierV2LockupTranched);
+
+    /// @notice The address of the broker admin account or contract managing the broker fee
+    function brokerAdmin() external view returns (address);
+
+    /// @notice The broker fee charged to create Sablier V2 stream
+    /// @dev See the `UD60x18` type definition in the `@prb/math/src/ud60x18/ValueType.sol file`
+    function brokerFee() external view returns (UD60x18);
 
     /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice See the documentation in {ISablierV2Lockup}
-    function withdraw(uint256 streamId, address to, uint128 amount) external;
+    /// @notice Creates a Lockup Linear stream; See https://docs.sablier.com/concepts/protocol/stream-types#lockup-linear
+    /// @param asset The address of the ERC-20 token to be streamed
+    /// @param totalAmount The total amount of ERC-20 tokens to be streamed
+    /// @param startTime The timestamp when the stream takes effect
+    /// @param endTime The timestamp by which the stream must be paid
+    /// @param recipient The address receiving the ERC-20 tokens
+    function createLinearStream(
+        IERC20 asset,
+        uint128 totalAmount,
+        uint40 startTime,
+        uint40 endTime,
+        address recipient
+    ) external returns (uint256 streamId);
+
+    /// @notice Creates a Lockup Tranched stream; See https://docs.sablier.com/concepts/protocol/stream-types#lockup-tranched
+    /// @param asset The address of the ERC-20 token to be streamed
+    /// @param totalAmount The total amount of ERC-20 tokens to be streamed
+    /// @param startTime The timestamp when the stream takes effect
+    /// @param recipient The address receiving the ERC-20 tokens
+    /// @param numberOfTranches The number of tranches paid by the stream
+    /// @param recurrence The recurrence of each tranche
+    function createTranchedStream(
+        IERC20 asset,
+        uint128 totalAmount,
+        uint40 startTime,
+        address recipient,
+        uint128 numberOfTranches,
+        Types.Recurrence recurrence
+    ) external returns (uint256 streamId);
+
+    /// @notice Updates the fee charged by the broker
+    ///
+    /// Notes:
+    /// - The new fee will be applied only to the new streams hence it can't be retrospectively updated
+    ///
+    /// @param newBrokerFee The new broker fee
+    function updateBrokerFee(UD60x18 newBrokerFee) external;
 
     /// @notice See the documentation in {ISablierV2Lockup}
-    function withdrawableAmountOf(uint256 streamId) external view returns (uint128 withdrawableAmount);
+    function withdraw(ISablierV2Lockup sablier, uint256 streamId, address to, uint128 amount) external;
 
     /// @notice See the documentation in {ISablierV2Lockup}
-    function withdrawMax(uint256 streamId, address to) external returns (uint128 withdrawnAmount);
+    function withdrawableAmountOf(
+        ISablierV2Lockup sablier,
+        uint256 streamId
+    ) external view returns (uint128 withdrawableAmount);
 
     /// @notice See the documentation in {ISablierV2Lockup}
-    function withdrawMultiple(uint256[] calldata streamIds, uint128[] calldata amounts) external;
+    function withdrawMax(
+        ISablierV2Lockup sablier,
+        uint256 streamId,
+        address to
+    ) external returns (uint128 withdrawnAmount);
 
     /// @notice See the documentation in {ISablierV2Lockup}
-    function withdrawMaxAndTransfer(uint256 streamId, address newRecipient) external returns (uint128 withdrawnAmount);
+    function withdrawMultiple(
+        ISablierV2Lockup sablier,
+        uint256[] calldata streamIds,
+        uint128[] calldata amounts
+    ) external;
 
     /// @notice See the documentation in {ISablierV2Lockup}
-    function cancel(uint256 streamId) external;
+    function withdrawMaxAndTransfer(
+        ISablierV2Lockup sablier,
+        uint256 streamId,
+        address newRecipient
+    ) external returns (uint128 withdrawnAmount);
 
     /// @notice See the documentation in {ISablierV2Lockup}
-    function cancelMultiple(uint256[] calldata streamIds) external;
+    function cancel(ISablierV2Lockup sablier, uint256 streamId) external;
 
     /// @notice See the documentation in {ISablierV2Lockup}
-    function renounce(uint256 streamId) external;
+    function cancelMultiple(ISablierV2Lockup sablier, uint256[] calldata streamIds) external;
+
+    /// @notice See the documentation in {ISablierV2Lockup}
+    function renounce(ISablierV2Lockup sablier, uint256 streamId) external;
 }

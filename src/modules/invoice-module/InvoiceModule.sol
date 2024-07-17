@@ -1,23 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierV2LockupLinear } from "@sablier/v2-core/src/interfaces/ISablierV2LockupLinear.sol";
 import { ISablierV2LockupTranched } from "@sablier/v2-core/src/interfaces/ISablierV2LockupTranched.sol";
-import { ISablierV2Lockup } from "@sablier/v2-core/src/interfaces/ISablierV2Lockup.sol";
 
 import { Types } from "./libraries/Types.sol";
 import { Errors } from "./libraries/Errors.sol";
 import { IInvoiceModule } from "./interfaces/IInvoiceModule.sol";
 import { IContainer } from "./../../interfaces/IContainer.sol";
-import { StreamCreator } from "./sablier-v2/StreamCreator.sol";
+import { StreamManager } from "./sablier-v2/StreamManager.sol";
 import { Helpers } from "./libraries/Helpers.sol";
 
 /// @title InvoiceModule
 /// @notice See the documentation in {IInvoiceModule}
-contract InvoiceModule is IInvoiceModule, StreamCreator {
+contract InvoiceModule is IInvoiceModule, StreamManager {
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -37,13 +35,12 @@ contract InvoiceModule is IInvoiceModule, StreamCreator {
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Initializes the {StreamCreator} contract
+    /// @dev Initializes the {StreamManager} contract
     constructor(
-        ISablierV2Lockup _sablier,
-        ISablierV2LockupLinear _sablierLockupLinearDeployment,
-        ISablierV2LockupTranched _sablierLockupTranchedDeployment,
+        ISablierV2LockupLinear _sablierLockupLinear,
+        ISablierV2LockupTranched _sablierLockupTranched,
         address _brokerAdmin
-    ) StreamCreator(_sablier, _sablierLockupLinearDeployment, _sablierLockupTranchedDeployment, _brokerAdmin) {}
+    ) StreamManager(_sablierLockupLinear, _sablierLockupTranched, _brokerAdmin) {}
 
     /*//////////////////////////////////////////////////////////////////////////
                                       MODIFIERS
@@ -58,7 +55,7 @@ contract InvoiceModule is IInvoiceModule, StreamCreator {
 
         // Checks: the sender implements the ERC-165 interface required by {IContainer}
         bytes4 interfaceId = type(IContainer).interfaceId;
-        if (!IERC165(msg.sender).supportsInterface(interfaceId)) revert Errors.ContainerUnsupportedInterface();
+        if (!IContainer(msg.sender).supportsInterface(interfaceId)) revert Errors.ContainerUnsupportedInterface();
         _;
     }
 
@@ -79,34 +76,50 @@ contract InvoiceModule is IInvoiceModule, StreamCreator {
     function createInvoice(Types.Invoice calldata invoice) external onlyContainer returns (uint256 id) {
         // Checks: the amount is non-zero
         if (invoice.payment.amount == 0) {
-            revert Errors.PaymentAmountZero();
+            revert Errors.ZeroPaymentAmount();
         }
 
         // Checks: the start time is stricly lower than the end time
-        if (invoice.startTime >= invoice.endTime) {
+        if (invoice.startTime > invoice.endTime) {
             revert Errors.StartTimeGreaterThanEndTime();
         }
 
         // Checks: end time is not in the past
         uint40 currentTime = uint40(block.timestamp);
         if (currentTime >= invoice.endTime) {
-            revert Errors.EndTimeLowerThanCurrentTime();
+            revert Errors.EndTimeInThePast();
         }
 
-        // Checks: validate the input parameters if the invoice must be paid in even transfers
-        if (invoice.payment.method == Types.Method.Transfer) {
-            // Checks: validate the input parameters if the invoice is recurring
-            if (invoice.payment.paymentsLeft > 1) {
-                _checkRecurringTransferInvoiceParams({
-                    recurrence: invoice.payment.recurrence,
-                    paymentsLeft: invoice.payment.paymentsLeft,
-                    startTime: invoice.startTime,
-                    endTime: invoice.endTime
-                });
+        // Checks: the recurrence type is not equal to one-off if dealing with a tranched stream-based invoice
+        if (invoice.payment.method == Types.Method.TranchedStream) {
+            // The recurrence cannot be set to one-off
+            if (invoice.payment.recurrence == Types.Recurrence.OneOff) {
+                revert Errors.TranchedStreamInvalidOneOffRecurence();
             }
-            // Or by using a linear or tranched stream in which case allow only ERC-20 assets
-        } else if (invoice.payment.asset == address(0)) {
-            revert Errors.OnlyERC20StreamsAllowed();
+        }
+
+        // Gets the number of payments for the invoice based on the payment method, interval and recurrence type
+        //
+        // Notes:
+        // - There should be only one payment when dealing with a one-off transfer-based invoice
+        // - When dealing with a recurring transfer or tranched stream, the number of payments must be calculated based
+        // on the payment interval (endTime - startTime) and recurrence type
+        uint40 numberOfPayments;
+        if (invoice.payment.method == Types.Method.Transfer && invoice.payment.recurrence == Types.Recurrence.OneOff) {
+            numberOfPayments = 1;
+        } else if (invoice.payment.method != Types.Method.LinearStream) {
+            numberOfPayments = _checkAndComputeNumberOfPayments({
+                recurrence: invoice.payment.recurrence,
+                startTime: invoice.startTime,
+                endTime: invoice.endTime
+            });
+        }
+
+        // Checks: the asset is different than the native token if dealing with either a linear or tranched stream-based invoice
+        if (invoice.payment.method != Types.Method.Transfer) {
+            if (invoice.payment.asset == address(0)) {
+                revert Errors.OnlyERC20StreamsAllowed();
+            }
         }
 
         // Get the next invoice ID
@@ -114,14 +127,14 @@ contract InvoiceModule is IInvoiceModule, StreamCreator {
 
         // Effects: create the invoice
         _invoices[id] = Types.Invoice({
-            recipient: msg.sender,
+            recipient: invoice.recipient,
             status: Types.Status.Pending,
             startTime: invoice.startTime,
             endTime: invoice.endTime,
             payment: Types.Payment({
                 recurrence: invoice.payment.recurrence,
                 method: invoice.payment.method,
-                paymentsLeft: invoice.payment.paymentsLeft,
+                paymentsLeft: numberOfPayments,
                 amount: invoice.payment.amount,
                 asset: invoice.payment.asset,
                 streamId: 0
@@ -135,12 +148,12 @@ contract InvoiceModule is IInvoiceModule, StreamCreator {
         }
 
         // Effects: add the invoice on the list of invoices generated by the container
-        _invoicesOf[msg.sender].push(id);
+        _invoicesOf[invoice.recipient].push(id);
 
         // Log the invoice creation
         emit InvoiceCreated({
             id: id,
-            recipient: msg.sender,
+            recipient: invoice.recipient,
             status: Types.Status.Pending,
             startTime: invoice.startTime,
             endTime: invoice.endTime,
@@ -185,7 +198,7 @@ contract InvoiceModule is IInvoiceModule, StreamCreator {
         // Using unchecked because the number of payments left cannot underflow as the invoice status
         // will be updated to `Paid` once `paymentLeft` is zero
         unchecked {
-            uint24 paymentsLeft = invoice.payment.paymentsLeft - 1;
+            uint40 paymentsLeft = invoice.payment.paymentsLeft - 1;
             _invoices[id].payment.paymentsLeft = paymentsLeft;
             if (paymentsLeft == 0) {
                 _invoices[id].status = Types.Status.Paid;
@@ -198,12 +211,12 @@ contract InvoiceModule is IInvoiceModule, StreamCreator {
         if (invoice.payment.asset == address(0)) {
             // Checks: the payment amount matches the invoice value
             if (msg.value < invoice.payment.amount) {
-                revert Errors.InvalidPaymentAmount({ amount: invoice.payment.amount });
+                revert Errors.PaymentAmountLessThanInvoiceValue({ amount: invoice.payment.amount });
             }
 
             // Interactions: pay the recipient with native token (ETH)
             (bool success, ) = payable(invoice.recipient).call{ value: invoice.payment.amount }("");
-            if (!success) revert Errors.PaymentFailed();
+            if (!success) revert Errors.NativeTokenPaymentFailed();
         } else {
             // Interactions: pay the recipient with the ERC-20 token
             IERC20(invoice.payment.asset).safeTransfer({
@@ -215,7 +228,7 @@ contract InvoiceModule is IInvoiceModule, StreamCreator {
 
     /// @dev Create the linear stream payment
     function _payByLinearStream(Types.Invoice memory invoice) internal returns (uint256 streamId) {
-        streamId = StreamCreator.createLinearStream({
+        streamId = StreamManager.createLinearStream({
             asset: IERC20(invoice.payment.asset),
             totalAmount: invoice.payment.amount,
             startTime: invoice.startTime,
@@ -226,29 +239,36 @@ contract InvoiceModule is IInvoiceModule, StreamCreator {
 
     /// @dev Create the tranched stream payment
     function _payByTranchedStream(Types.Invoice memory invoice) internal returns (uint256 streamId) {
-        streamId = StreamCreator.createTranchedStream({
+        streamId = StreamManager.createTranchedStream({
             asset: IERC20(invoice.payment.asset),
             totalAmount: invoice.payment.amount,
             startTime: invoice.startTime,
-            endTime: invoice.endTime,
             recipient: invoice.recipient,
+            numberOfTranches: invoice.payment.paymentsLeft,
             recurrence: invoice.payment.recurrence
         });
     }
 
-    /// @dev Validates the input parameters if the invoice is recurring and must be paid in even transfers
-    function _checkRecurringTransferInvoiceParams(
+    /// @notice Calculates the number of payments to be made for a recurring transfer and tranched stream-based invoice
+    /// @dev Reverts if the number of payments is zero, indicating that either the interval or recurrence type was set incorrectly
+    function _checkAndComputeNumberOfPayments(
         Types.Recurrence recurrence,
-        uint40 paymentsLeft,
         uint40 startTime,
         uint40 endTime
-    ) internal pure {
-        // Calculate the expected number of payments based on the invoice recurrence and payment interval
-        uint40 numberOfPayments = Helpers.computeNumberOfRecurringPayments(recurrence, startTime, endTime);
+    ) internal pure returns (uint40 numberOfPayments) {
+        // Checks: the invoice payment interval matches the recurrence type
+        // This cannot underflow as the start time is stricly lower than the end time when this call executes
+        uint40 interval;
+        unchecked {
+            interval = endTime - startTime;
+        }
 
-        // Checks: the specified number of payments is valid
-        if (paymentsLeft != numberOfPayments) {
-            revert Errors.InvalidNumberOfPayments({ expectedNumber: numberOfPayments });
+        // Check and calculate the expected number of payments based on the invoice recurrence and payment interval
+        numberOfPayments = Helpers.computeNumberOfPayments(recurrence, interval);
+
+        // Revert if there are zero payments to be made since the payment method due to invalid interval and recurrence type
+        if (numberOfPayments == 0) {
+            revert Errors.PaymentIntervalTooShortForSelectedRecurrence();
         }
     }
 }
