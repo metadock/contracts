@@ -7,6 +7,7 @@ import { ISablierV2Lockup } from "@sablier/v2-core/src/interfaces/ISablierV2Lock
 import { LockupLinear, LockupTranched } from "@sablier/v2-core/src/types/DataTypes.sol";
 import { Broker, LockupLinear } from "@sablier/v2-core/src/types/DataTypes.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ud60x18, UD60x18 } from "@prb/math/src/UD60x18.sol";
 
 import { IStreamManager } from "./interfaces/IStreamManager.sol";
@@ -16,6 +17,8 @@ import { Types } from "./../libraries/Types.sol";
 /// @title StreamManager
 /// @dev See the documentation in {IStreamManager}
 contract StreamManager is IStreamManager {
+    using SafeERC20 for IERC20;
+
     /*//////////////////////////////////////////////////////////////////////////
                                   PUBLIC STORAGE
     //////////////////////////////////////////////////////////////////////////*/
@@ -196,6 +199,7 @@ contract StreamManager is IStreamManager {
         params.asset = asset; // The streaming asset
         params.cancelable = true; // Whether the stream will be cancelable or not
         params.transferable = true; // Whether the stream will be transferable or not
+        params.startTime = startTime; // The timestamp when to start streaming
 
         // Calculate the duration of each tranche based on the payment recurrence
         uint40 durationPerTranche = _computeDurationPerTrache(recurrence);
@@ -236,7 +240,7 @@ contract StreamManager is IStreamManager {
     /// and approves either the `SablierV2LockupLinear` or `SablierV2LockupTranched` to spend the amount
     function _transferFromAndApprove(IERC20 asset, uint128 amount, address spender) internal {
         // Transfer the provided amount of ERC-20 tokens to this contract
-        asset.transferFrom(msg.sender, address(this), amount);
+        IERC20(asset).safeTransferFrom(msg.sender, address(this), amount);
 
         // Approve the Sablier contract to spend the ERC-20 tokens
         asset.approve(spender, amount);
