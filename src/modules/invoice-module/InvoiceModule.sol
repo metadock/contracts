@@ -98,21 +98,26 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             }
         }
 
-        // Gets the number of payments for the invoice based on the payment method, interval and recurrence type
+        // Validates the invoice interval (endTime - startTime) and returns the number of payments of the invoice
+        // based on the payment method, interval and recurrence type
         //
         // Notes:
+        // - The number of payments is taken into account only for transfer-based invoices
         // - There should be only one payment when dealing with a one-off transfer-based invoice
-        // - When dealing with a recurring transfer or tranched stream, the number of payments must be calculated based
+        // - When dealing with a recurring transfer, the number of payments must be calculated based
         // on the payment interval (endTime - startTime) and recurrence type
         uint40 numberOfPayments;
         if (invoice.payment.method == Types.Method.Transfer && invoice.payment.recurrence == Types.Recurrence.OneOff) {
             numberOfPayments = 1;
         } else if (invoice.payment.method != Types.Method.LinearStream) {
-            numberOfPayments = _checkAndComputeNumberOfPayments({
+            numberOfPayments = _checkIntervalPayments({
                 recurrence: invoice.payment.recurrence,
                 startTime: invoice.startTime,
                 endTime: invoice.endTime
             });
+
+            // Set the number of payments to zero if dealing with a tranched-based invoice
+            if (invoice.payment.method == Types.Method.TranchedStream) numberOfPayments = 0;
         }
 
         // Checks: the asset is different than the native token if dealing with either a linear or tranched stream-based invoice
@@ -166,6 +171,11 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
         // Load the invoice from storage
         Types.Invoice memory invoice = _invoices[id];
 
+        // Checks: the invoice is not null
+        if (invoice.recipient == address(0)) {
+            revert Errors.InvoiceNull();
+        }
+
         // Checks: the invoice is not already paid or canceled
         if (invoice.status == Types.Status.Paid) {
             revert Errors.InvoiceAlreadyPaid();
@@ -178,14 +188,55 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             _payByTransfer(id, invoice);
         } else {
             uint256 streamId;
-            // Check to see wether to pay by creating a linear or tranched stream
+            // Check to see whether the invoice must be paid through a linear or tranched stream
             if (invoice.payment.method == Types.Method.LinearStream) {
                 streamId = _payByLinearStream(invoice);
             } else streamId = _payByTranchedStream(invoice);
+
+            // Effects: update the status of the invoice and stream ID
+            _invoices[id].status = Types.Status.Paid;
+            _invoices[id].payment.streamId = streamId;
         }
 
         // Log the payment transaction
-        emit InvoicePaid({ id: id, payer: msg.sender, status: invoice.status, payment: invoice.payment });
+        emit InvoicePaid({ id: id, payer: msg.sender, status: _invoices[id].status, payment: _invoices[id].payment });
+    }
+
+    /// @inheritdoc IInvoiceModule
+    function cancelInvoice(uint256 id) external {
+        // Load the invoice from storage
+        Types.Invoice memory invoice = _invoices[id];
+
+        // Checks: the invoice is paid or already canceled
+        if (invoice.status == Types.Status.Paid) {
+            revert Errors.CannotCancelPaidInvoice();
+        } else if (invoice.status == Types.Status.Canceled) {
+            revert Errors.CannotCancelCanceledInvoice();
+        }
+
+        // Checks: the `msg.sender` is the creator if dealing with a transfer-based invoice
+        //
+        // Notes:
+        // - for a linear or tranched stream-based invoice, the `msg.sender` is checked in the
+        // {SablierV2Lockup} `cancel` method
+        if (invoice.payment.method == Types.Method.Transfer) {
+            if (invoice.recipient != msg.sender) {
+                revert Errors.InvoiceOwnerUnauthorized();
+            }
+        }
+
+        // Effects: cancel the stream accordingly depending on its type
+        if (invoice.payment.method == Types.Method.LinearStream) {
+            cancelLinearStream({ streamId: invoice.payment.streamId });
+        } else if (invoice.payment.method == Types.Method.TranchedStream) {
+            cancelTranchedStream({ streamId: invoice.payment.streamId });
+        }
+
+        // Effects: mark the invoice as canceled
+        _invoices[id].status = Types.Status.Canceled;
+
+        // Log the invoice cancelation
+        emit InvoiceCanceled(id);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -219,7 +270,8 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             if (!success) revert Errors.NativeTokenPaymentFailed();
         } else {
             // Interactions: pay the recipient with the ERC-20 token
-            IERC20(invoice.payment.asset).safeTransfer({
+            IERC20(invoice.payment.asset).safeTransferFrom({
+                from: msg.sender,
                 to: address(invoice.recipient),
                 value: invoice.payment.amount
             });
@@ -239,19 +291,24 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
 
     /// @dev Create the tranched stream payment
     function _payByTranchedStream(Types.Invoice memory invoice) internal returns (uint256 streamId) {
+        uint40 numberOfTranches = Helpers.computeNumberOfPayments(
+            invoice.payment.recurrence,
+            invoice.endTime - invoice.startTime
+        );
+
         streamId = StreamManager.createTranchedStream({
             asset: IERC20(invoice.payment.asset),
             totalAmount: invoice.payment.amount,
             startTime: invoice.startTime,
             recipient: invoice.recipient,
-            numberOfTranches: invoice.payment.paymentsLeft,
+            numberOfTranches: numberOfTranches,
             recurrence: invoice.payment.recurrence
         });
     }
 
     /// @notice Calculates the number of payments to be made for a recurring transfer and tranched stream-based invoice
     /// @dev Reverts if the number of payments is zero, indicating that either the interval or recurrence type was set incorrectly
-    function _checkAndComputeNumberOfPayments(
+    function _checkIntervalPayments(
         Types.Recurrence recurrence,
         uint40 startTime,
         uint40 endTime

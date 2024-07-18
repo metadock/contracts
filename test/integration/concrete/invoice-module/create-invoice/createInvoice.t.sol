@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import { InvoiceModule_Integration_Shared_Test } from "../../../shared/InvoiceModule.t.sol";
+import { CreateInvoice_Integration_Shared_Test } from "../../../shared/createInvoice.t.sol";
 import { Types } from "./../../../../../src/modules/invoice-module/libraries/Types.sol";
 import { Errors } from "../../../../utils/Errors.sol";
 import { Events } from "../../../../utils/Events.sol";
 
-contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Shared_Test {
+contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Shared_Test {
+    Types.Invoice invoice;
+
     function setUp() public virtual override {
-        InvoiceModule_Integration_Shared_Test.setUp();
+        CreateInvoice_Integration_Shared_Test.setUp();
     }
 
     function test_RevertWhen_CallerNotContract() external {
@@ -19,7 +21,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
         vm.expectRevert(Errors.ContainerZeroCodeSize.selector);
 
         // Create an one-off transfer invoice
-        createInvoiceWithOneOffTransfer();
+        invoice = createInvoiceWithOneOffTransfer({ asset: address(usdt), recipient: users.eve });
 
         // Run the test
         invoiceModule.createInvoice(invoice);
@@ -30,7 +32,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
         vm.startPrank({ msgSender: users.eve });
 
         // Create an one-off transfer invoice
-        createInvoiceWithOneOffTransfer();
+        invoice = createInvoiceWithOneOffTransfer({ asset: address(usdt), recipient: users.eve });
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
@@ -50,7 +52,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
         vm.startPrank({ msgSender: users.eve });
 
         // Create an one-off transfer invoice
-        createInvoiceWithOneOffTransfer();
+        invoice = createInvoiceWithOneOffTransfer({ asset: address(usdt), recipient: users.eve });
 
         // Set the payment amount to zero to simulate the error
         invoice.payment.amount = 0;
@@ -78,7 +80,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
         vm.startPrank({ msgSender: users.eve });
 
         // Create an one-off transfer invoice
-        createInvoiceWithOneOffTransfer();
+        invoice = createInvoiceWithOneOffTransfer({ asset: address(usdt), recipient: users.eve });
 
         // Set the start time to be the current timestamp and the end time one second earlier
         invoice.startTime = uint40(block.timestamp);
@@ -108,7 +110,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
         vm.startPrank({ msgSender: users.eve });
 
         // Create an one-off transfer invoice
-        createInvoiceWithOneOffTransfer();
+        invoice = createInvoiceWithOneOffTransfer({ asset: address(usdt), recipient: users.eve });
 
         // Set the block.timestamp to 1641070800
         vm.warp(1641070800);
@@ -145,7 +147,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
 
         // Create a recurring transfer invoice that must be paid on a monthly basis
         // Hence, the interval between the start and end time must be at least 1 month
-        createInvoiceWithOneOffTransfer();
+        invoice = createInvoiceWithOneOffTransfer({ asset: address(usdt), recipient: users.eve });
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
@@ -199,7 +201,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
 
         // Create a recurring transfer invoice that must be paid on a monthly basis
         // Hence, the interval between the start and end time must be at least 1 month
-        createInvoiceWithRecurringTransfer({ recurrence: Types.Recurrence.Monthly });
+        invoice = createInvoiceWithRecurringTransfer({ recurrence: Types.Recurrence.Monthly, recipient: users.eve });
 
         // Alter the end time to be 3 weeks from now
         invoice.endTime = uint40(block.timestamp) + 3 weeks;
@@ -231,7 +233,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
         vm.startPrank({ msgSender: users.eve });
 
         // Create a recurring transfer invoice that must be paid on weekly basis
-        createInvoiceWithRecurringTransfer({ recurrence: Types.Recurrence.Weekly });
+        invoice = createInvoiceWithRecurringTransfer({ recurrence: Types.Recurrence.Weekly, recipient: users.eve });
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
@@ -284,7 +286,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
         vm.startPrank({ msgSender: users.eve });
 
         // Create a new invoice with a tranched stream payment
-        createInvoiceWithTranchedStream({ recurrence: Types.Recurrence.Weekly });
+        invoice = createInvoiceWithTranchedStream({ recurrence: Types.Recurrence.Weekly, recipient: users.eve });
 
         // Alter the payment recurrence by setting it to one-off
         invoice.payment.recurrence = Types.Recurrence.OneOff;
@@ -316,7 +318,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
         vm.startPrank({ msgSender: users.eve });
 
         // Create a new invoice with a tranched stream payment
-        createInvoiceWithTranchedStream({ recurrence: Types.Recurrence.Monthly });
+        invoice = createInvoiceWithTranchedStream({ recurrence: Types.Recurrence.Monthly, recipient: users.eve });
 
         // Alter the end time to be 3 weeks from now
         invoice.endTime = uint40(block.timestamp) + 3 weeks;
@@ -349,7 +351,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
         vm.startPrank({ msgSender: users.eve });
 
         // Create a new invoice with a linear stream payment
-        createInvoiceWithTranchedStream({ recurrence: Types.Recurrence.Weekly });
+        invoice = createInvoiceWithTranchedStream({ recurrence: Types.Recurrence.Weekly, recipient: users.eve });
 
         // Alter the payment asset by setting it to
         invoice.payment.asset = address(0);
@@ -381,7 +383,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
         vm.startPrank({ msgSender: users.eve });
 
         // Create a new invoice with a tranched stream payment
-        createInvoiceWithTranchedStream({ recurrence: Types.Recurrence.Weekly });
+        invoice = createInvoiceWithTranchedStream({ recurrence: Types.Recurrence.Weekly, recipient: users.eve });
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
@@ -415,7 +417,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
         assertEq(actualInvoice.endTime, invoice.endTime);
         assertEq(uint8(actualInvoice.payment.method), uint8(Types.Method.TranchedStream));
         assertEq(uint8(actualInvoice.payment.recurrence), uint8(Types.Recurrence.Weekly));
-        assertEq(actualInvoice.payment.paymentsLeft, 4);
+        assertEq(actualInvoice.payment.paymentsLeft, 0);
         assertEq(actualInvoice.payment.asset, invoice.payment.asset);
         assertEq(actualInvoice.payment.amount, invoice.payment.amount);
         assertEq(actualInvoice.payment.streamId, 0);
@@ -434,7 +436,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
         vm.startPrank({ msgSender: users.eve });
 
         // Create a new invoice with a linear stream payment
-        createInvoiceWithLinearStream();
+        invoice = createInvoiceWithLinearStream({ recipient: users.eve });
 
         // Alter the payment asset by setting it to
         invoice.payment.asset = address(0);
@@ -466,7 +468,7 @@ contract CreateInvoice_Integration_Concret_Test is InvoiceModule_Integration_Sha
         vm.startPrank({ msgSender: users.eve });
 
         // Create a new invoice with a linear stream payment
-        createInvoiceWithLinearStream();
+        invoice = createInvoiceWithLinearStream({ recipient: users.eve });
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
