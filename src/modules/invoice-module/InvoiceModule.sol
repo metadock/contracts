@@ -98,21 +98,26 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             }
         }
 
-        // Gets the number of payments for the invoice based on the payment method, interval and recurrence type
+        // Validates the invoice interval (endTime - startTime) and returns the number of payments of the invoice
+        // based on the payment method, interval and recurrence type
         //
         // Notes:
+        // - The number of payments is taken into account only for transfer-based invoices
         // - There should be only one payment when dealing with a one-off transfer-based invoice
-        // - When dealing with a recurring transfer or tranched stream, the number of payments must be calculated based
+        // - When dealing with a recurring transfer, the number of payments must be calculated based
         // on the payment interval (endTime - startTime) and recurrence type
         uint40 numberOfPayments;
         if (invoice.payment.method == Types.Method.Transfer && invoice.payment.recurrence == Types.Recurrence.OneOff) {
             numberOfPayments = 1;
         } else if (invoice.payment.method != Types.Method.LinearStream) {
-            numberOfPayments = _checkAndComputeNumberOfPayments({
+            numberOfPayments = _checkIntervalPayments({
                 recurrence: invoice.payment.recurrence,
                 startTime: invoice.startTime,
                 endTime: invoice.endTime
             });
+
+            // Set the number of payments to zero if dealing with a tranched-based invoice
+            if (invoice.payment.method == Types.Method.TranchedStream) numberOfPayments = 0;
         }
 
         // Checks: the asset is different than the native token if dealing with either a linear or tranched stream-based invoice
@@ -183,10 +188,14 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             _payByTransfer(id, invoice);
         } else {
             uint256 streamId;
-            // Check to see wether to pay by creating a linear or tranched stream
+            // Check to see whether the invoice must be paid through a linear or tranched stream
             if (invoice.payment.method == Types.Method.LinearStream) {
                 streamId = _payByLinearStream(invoice);
             } else streamId = _payByTranchedStream(invoice);
+
+            // Effects: update the status of the invoice and stream ID
+            _invoices[id].status = Types.Status.Paid;
+            _invoices[id].payment.streamId = streamId;
         }
 
         // Log the payment transaction
@@ -282,19 +291,24 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
 
     /// @dev Create the tranched stream payment
     function _payByTranchedStream(Types.Invoice memory invoice) internal returns (uint256 streamId) {
+        uint40 numberOfTranches = Helpers.computeNumberOfPayments(
+            invoice.payment.recurrence,
+            invoice.endTime - invoice.startTime
+        );
+
         streamId = StreamManager.createTranchedStream({
             asset: IERC20(invoice.payment.asset),
             totalAmount: invoice.payment.amount,
             startTime: invoice.startTime,
             recipient: invoice.recipient,
-            numberOfTranches: invoice.payment.paymentsLeft,
+            numberOfTranches: numberOfTranches,
             recurrence: invoice.payment.recurrence
         });
     }
 
     /// @notice Calculates the number of payments to be made for a recurring transfer and tranched stream-based invoice
     /// @dev Reverts if the number of payments is zero, indicating that either the interval or recurrence type was set incorrectly
-    function _checkAndComputeNumberOfPayments(
+    function _checkIntervalPayments(
         Types.Recurrence recurrence,
         uint40 startTime,
         uint40 endTime
