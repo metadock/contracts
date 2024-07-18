@@ -6,6 +6,8 @@ import { Types } from "./../../../../../src/modules/invoice-module/libraries/Typ
 import { Events } from "../../../../utils/Events.sol";
 import { Errors } from "../../../../utils/Errors.sol";
 
+import { LockupLinear, LockupTranched } from "@sablier/v2-core/src/types/DataTypes.sol";
+
 contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Test {
     function setUp() public virtual override {
         PayInvoice_Integration_Shared_Test.setUp();
@@ -188,13 +190,13 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         );
     }
 
-    function test_PayInvoice_PaymentMethodTransfer_NativeToken_Recurring()
+    function test_PayInvoice_PaymentMethodTransfer_ERC20Token_Recurring()
         external
         whenInvoiceNotNull
         whenInvoiceNotAlreadyPaid
         whenInvoiceNotCanceled
         givenPaymentMethodTransfer
-        givenPaymentAmountInNativeToken
+        givenPaymentAmountInERC20Tokens
         whenPaymentAmountEqualToInvoiceValue
     {
         // Set the recurring USDT transfer invoice as current one
@@ -242,13 +244,13 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         );
     }
 
-    /*   function test_PayInvoice_PaymentMethodLinearTransfer()
+    function test_PayInvoice_PaymentMethodLinearStream()
         external
         whenInvoiceNotNull
         whenInvoiceNotAlreadyPaid
         whenInvoiceNotCanceled
         givenPaymentMethodLinearStream
-        givenPaymentAmountInNativeToken
+        givenPaymentAmountInERC20Tokens
         whenPaymentAmountEqualToInvoiceValue
     {
         // Set the linear USDT stream-based invoice as current one
@@ -272,7 +274,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
                 paymentsLeft: 0,
                 asset: invoices[invoiceId].payment.asset,
                 amount: invoices[invoiceId].payment.amount,
-                streamId: 0
+                streamId: 1
             })
         });
 
@@ -282,6 +284,68 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         // Assert the actual and the expected state of the invoice
         Types.Invoice memory invoice = invoiceModule.getInvoice({ id: invoiceId });
         assertEq(uint8(invoice.status), uint8(Types.Status.Paid));
+        assertEq(invoice.payment.streamId, 1);
         assertEq(invoice.payment.paymentsLeft, 0);
-    } */
+
+        // Assert the actual and the expected state of the Sablier v2 linear stream
+        LockupLinear.StreamLL memory stream = invoiceModule.getLinearStream({ streamId: 1 });
+        assertEq(stream.sender, users.bob);
+        assertEq(stream.recipient, users.eve);
+        assertEq(address(stream.asset), address(usdt));
+        assertEq(stream.startTime, invoice.startTime);
+        assertEq(stream.endTime, invoice.endTime);
+    }
+
+    function test_PayInvoice_PaymentMethodTranchedStream()
+        external
+        whenInvoiceNotNull
+        whenInvoiceNotAlreadyPaid
+        whenInvoiceNotCanceled
+        givenPaymentMethodTranchedStream
+        givenPaymentAmountInERC20Tokens
+        whenPaymentAmountEqualToInvoiceValue
+    {
+        // Set the tranched USDT stream-based invoice as current one
+        uint256 invoiceId = 4;
+
+        // Make Bob the payer for the default invoice
+        vm.startPrank({ msgSender: users.bob });
+
+        // Approve the {InvoiceModule} to transfer the ERC-20 tokens on Bob's behalf
+        usdt.approve({ spender: address(invoiceModule), amount: invoices[invoiceId].payment.amount });
+
+        // Expect the {InvoicePaid} event to be emitted
+        vm.expectEmit();
+        emit Events.InvoicePaid({
+            id: invoiceId,
+            payer: users.bob,
+            status: Types.Status.Paid,
+            payment: Types.Payment({
+                method: invoices[invoiceId].payment.method,
+                recurrence: invoices[invoiceId].payment.recurrence,
+                paymentsLeft: 0,
+                asset: invoices[invoiceId].payment.asset,
+                amount: invoices[invoiceId].payment.amount,
+                streamId: 1
+            })
+        });
+
+        // Run the test
+        invoiceModule.payInvoice{ value: invoices[invoiceId].payment.amount }({ id: invoiceId });
+
+        // Assert the actual and the expected state of the invoice
+        Types.Invoice memory invoice = invoiceModule.getInvoice({ id: invoiceId });
+        assertEq(uint8(invoice.status), uint8(Types.Status.Paid));
+        assertEq(invoice.payment.streamId, 1);
+        assertEq(invoice.payment.paymentsLeft, 0);
+
+        // Assert the actual and the expected state of the Sablier v2 tranched stream
+        LockupTranched.StreamLT memory stream = invoiceModule.getTranchedStream({ streamId: 1 });
+        assertEq(stream.sender, users.bob);
+        assertEq(stream.recipient, users.eve);
+        assertEq(address(stream.asset), address(usdt));
+        assertEq(stream.startTime, invoice.startTime);
+        assertEq(stream.endTime, invoice.endTime);
+        assertEq(stream.tranches.length, 4);
+    }
 }

@@ -417,7 +417,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
         assertEq(actualInvoice.endTime, invoice.endTime);
         assertEq(uint8(actualInvoice.payment.method), uint8(Types.Method.TranchedStream));
         assertEq(uint8(actualInvoice.payment.recurrence), uint8(Types.Recurrence.Weekly));
-        assertEq(actualInvoice.payment.paymentsLeft, 4);
+        assertEq(actualInvoice.payment.paymentsLeft, 0);
         assertEq(actualInvoice.payment.asset, invoice.payment.asset);
         assertEq(actualInvoice.payment.amount, invoice.payment.amount);
         assertEq(actualInvoice.payment.streamId, 0);
