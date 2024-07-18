@@ -267,7 +267,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         emit Events.InvoicePaid({
             id: invoiceId,
             payer: users.bob,
-            status: Types.Status.Paid,
+            status: Types.Status.Ongoing,
             payment: Types.Payment({
                 method: invoices[invoiceId].payment.method,
                 recurrence: invoices[invoiceId].payment.recurrence,
@@ -283,7 +283,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
 
         // Assert the actual and the expected state of the invoice
         Types.Invoice memory invoice = invoiceModule.getInvoice({ id: invoiceId });
-        assertEq(uint8(invoice.status), uint8(Types.Status.Paid));
+        assertEq(uint8(invoice.status), uint8(Types.Status.Ongoing));
         assertEq(invoice.payment.streamId, 1);
         assertEq(invoice.payment.paymentsLeft, 0);
 
@@ -319,7 +319,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         emit Events.InvoicePaid({
             id: invoiceId,
             payer: users.bob,
-            status: Types.Status.Paid,
+            status: Types.Status.Ongoing,
             payment: Types.Payment({
                 method: invoices[invoiceId].payment.method,
                 recurrence: invoices[invoiceId].payment.recurrence,
@@ -335,7 +335,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
 
         // Assert the actual and the expected state of the invoice
         Types.Invoice memory invoice = invoiceModule.getInvoice({ id: invoiceId });
-        assertEq(uint8(invoice.status), uint8(Types.Status.Paid));
+        assertEq(uint8(invoice.status), uint8(Types.Status.Ongoing));
         assertEq(invoice.payment.streamId, 1);
         assertEq(invoice.payment.paymentsLeft, 0);
 

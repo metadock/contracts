@@ -29,10 +29,12 @@ payInvoice.t.sol
             │       └── it should emit an {InvoicePaid} event
             ├── given the payment method is linear stream
             │   ├── it should create a Sablier v2 linear stream
+            │   ├── it should update the invoice status to Ongoing
             │   ├── it should update the invoice stream ID
             │   └── it should emit an {InvoicePaid} event
             └── given the payment method is tranched stream
                 ├── it should create a Sablier v2 tranched stream
+                ├── it should update the invoice status to Ongoing
                 ├── it should update the invoice stream ID
                 └── it should emit an {InvoicePaid} event
                             

@@ -185,6 +185,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
 
         // Handle the payment workflow depending on the payment method type
         if (invoice.payment.method == Types.Method.Transfer) {
+            // Effects: pay the invoice and update its status to `Paid` or `Ongoing` depending on the payment type
             _payByTransfer(id, invoice);
         } else {
             uint256 streamId;
@@ -193,8 +194,9 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
                 streamId = _payByLinearStream(invoice);
             } else streamId = _payByTranchedStream(invoice);
 
-            // Effects: update the status of the invoice and stream ID
-            _invoices[id].status = Types.Status.Paid;
+            // Effects: update the status of the invoice to `Ongoing` and the stream ID
+            // if dealing with a linear or tranched-based invoice
+            _invoices[id].status = Types.Status.Ongoing;
             _invoices[id].payment.streamId = streamId;
         }
 
