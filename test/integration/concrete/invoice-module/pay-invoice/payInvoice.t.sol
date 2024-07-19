@@ -11,31 +11,6 @@ import { LockupLinear, LockupTranched } from "@sablier/v2-core/src/types/DataTyp
 contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Test {
     function setUp() public virtual override {
         PayInvoice_Integration_Shared_Test.setUp();
-
-        // Create a mock invoice with a one-off USDT transfer
-        Types.Invoice memory invoice = createInvoiceWithOneOffTransfer({ asset: address(usdt), recipient: users.eve });
-        invoices[0] = invoice;
-        executeCreateInvoice({ invoice: invoice, user: users.eve });
-
-        // Create a mock invoice with a one-off ETH transfer
-        invoice = createInvoiceWithOneOffTransfer({ asset: address(0), recipient: users.eve });
-        invoices[1] = invoice;
-        executeCreateInvoice({ invoice: invoice, user: users.eve });
-
-        // Create a mock invoice with a recurring USDT transfer
-        invoice = createInvoiceWithRecurringTransfer({ recurrence: Types.Recurrence.Weekly, recipient: users.eve });
-        invoices[2] = invoice;
-        executeCreateInvoice({ invoice: invoice, user: users.eve });
-
-        // Create a mock invoice with a linear stream payment
-        invoice = createInvoiceWithLinearStream({ recipient: users.eve });
-        invoices[3] = invoice;
-        executeCreateInvoice({ invoice: invoice, user: users.eve });
-
-        // Create a mock invoice with a tranched stream payment
-        invoice = createInvoiceWithTranchedStream({ recurrence: Types.Recurrence.Weekly, recipient: users.eve });
-        invoices[4] = invoice;
-        executeCreateInvoice({ invoice: invoice, user: users.eve });
     }
 
     function test_RevertWhen_InvoiceNull() external {
