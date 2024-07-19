@@ -55,7 +55,7 @@ library Errors {
     error CannotCancelPaidInvoice();
 
     /// @notice Thrown when an attempt is made to cancel an already canceled invoice
-    error CannotCancelCanceledInvoice();
+    error InvoiceAlreadyCanceled();
 
     /*//////////////////////////////////////////////////////////////////////////
                                     STREAM-MANAGER
