@@ -57,6 +57,9 @@ library Errors {
     /// @notice Thrown when an attempt is made to cancel an already canceled invoice
     error InvoiceAlreadyCanceled();
 
+    /// @notice Thrown when the caller is not the initial stream sender
+    error OnlyInitialStreamSender(address initialSender);
+
     /*//////////////////////////////////////////////////////////////////////////
                                     STREAM-MANAGER
     //////////////////////////////////////////////////////////////////////////*/
