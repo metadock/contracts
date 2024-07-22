@@ -138,7 +138,7 @@ contract CancelInvoice_Integration_Concret_Test is CancelInvoice_Integration_Sha
         assertEq(uint8(invoice.status), uint8(Types.Status.Canceled));
     }
 
-    function test_RevertWhen_PaymentMethodLinearStream_StatusOngoing_SenderNotStreamSender()
+    function test_RevertWhen_PaymentMethodLinearStream_StatusOngoing_SenderNoInitialtStreamSender()
         external
         whenInvoiceNotAlreadyPaid
         whenInvoiceNotCanceled
@@ -158,13 +158,155 @@ contract CancelInvoice_Integration_Concret_Test is CancelInvoice_Integration_Sha
         // Pay the invoice first (status will be updated to `Ongoing`)
         invoiceModule.payInvoice{ value: invoices[invoiceId].payment.amount }({ id: invoiceId });
 
-        // Make Eve the caller who IS NOT the stream sender
+        // Make Eve the caller who IS NOT the initial stream sender but rather the recipient
         vm.startPrank({ msgSender: users.eve });
 
-        // Expect the call to revert with the {SablierV2Lockup_Unauthorized} error
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierV2Lockup_Unauthorized.selector, 1, users.bob));
+        // Expect the call to revert with the {OnlyInitialStreamSender} error
+        vm.expectRevert(abi.encodeWithSelector(Errors.OnlyInitialStreamSender.selector, users.bob));
 
         // Run the test
         invoiceModule.cancelInvoice({ id: invoiceId });
+    }
+
+    function test_CancelInvoice_PaymentMethodLinearStream_StatusOngoing()
+        external
+        whenInvoiceNotAlreadyPaid
+        whenInvoiceNotCanceled
+        givenPaymentMethodLinearStream
+        givenInvoiceStatusOngoing
+        whenSenderInitialStreamSender
+    {
+        // Set current invoice as a linear stream-based one
+        uint256 invoiceId = 3;
+
+        // The invoice must be paid for its status to be updated to `Ongoing`
+        // Make Bob the payer of the invoice (also Bob will be the initial stream sender)
+        vm.startPrank({ msgSender: users.bob });
+
+        // Approve the {InvoiceModule} to transfer the USDT tokens on Bob's behalf
+        usdt.approve({ spender: address(invoiceModule), amount: invoices[invoiceId].payment.amount });
+
+        // Pay the invoice first (status will be updated to `Ongoing`)
+        invoiceModule.payInvoice{ value: invoices[invoiceId].payment.amount }({ id: invoiceId });
+
+        // Expect the {InvoiceCanceled} event to be emitted
+        vm.expectEmit();
+        emit Events.InvoiceCanceled({ id: invoiceId });
+
+        // Run the test
+        invoiceModule.cancelInvoice({ id: invoiceId });
+
+        // Assert the actual and expected invoice status
+        Types.Invoice memory invoice = invoiceModule.getInvoice({ id: invoiceId });
+        assertEq(uint8(invoice.status), uint8(Types.Status.Canceled));
+    }
+
+    function test_RevertWhen_PaymentMethodTranchedStream_StatusPending_SenderNotInvoiceRecipient()
+        external
+        whenInvoiceNotAlreadyPaid
+        whenInvoiceNotCanceled
+        givenPaymentMethodTranchedStream
+        givenInvoiceStatusPending
+    {
+        // Set current invoice as a tranched stream-based one
+        uint256 invoiceId = 4;
+
+        // Make Bob the caller who IS NOT the recipient of the invoice
+        vm.startPrank({ msgSender: users.bob });
+
+        // Expect the call to revert with the {InvoiceOwnerUnauthorized} error
+        vm.expectRevert(Errors.InvoiceOwnerUnauthorized.selector);
+
+        // Run the test
+        invoiceModule.cancelInvoice({ id: invoiceId });
+    }
+
+    function test_CancelInvoice_PaymentMethodTranchedStream_StatusPending()
+        external
+        whenInvoiceNotAlreadyPaid
+        whenInvoiceNotCanceled
+        givenPaymentMethodTranchedStream
+        givenInvoiceStatusPending
+        whenSenderInvoiceRecipient
+    {
+        // Set current invoice as a tranched stream-based one
+        uint256 invoiceId = 4;
+
+        // Make Eve the caller who is the recipient of the invoice
+        vm.startPrank({ msgSender: users.eve });
+
+        // Expect the {InvoiceCanceled} event to be emitted
+        vm.expectEmit();
+        emit Events.InvoiceCanceled({ id: invoiceId });
+
+        // Run the test
+        invoiceModule.cancelInvoice({ id: invoiceId });
+
+        // Assert the actual and expected invoice status
+        Types.Invoice memory invoice = invoiceModule.getInvoice({ id: invoiceId });
+        assertEq(uint8(invoice.status), uint8(Types.Status.Canceled));
+    }
+
+    function test_RevertWhen_PaymentMethodTranchedStream_StatusOngoing_SenderNoInitialtStreamSender()
+        external
+        whenInvoiceNotAlreadyPaid
+        whenInvoiceNotCanceled
+        givenPaymentMethodTranchedStream
+        givenInvoiceStatusOngoing
+    {
+        // Set current invoice as a tranched stream-based one
+        uint256 invoiceId = 4;
+
+        // The invoice must be paid for its status to be updated to `Ongoing`
+        // Make Bob the payer of the invoice (also Bob will be the stream sender)
+        vm.startPrank({ msgSender: users.bob });
+
+        // Approve the {InvoiceModule} to transfer the USDT tokens on Bob's behalf
+        usdt.approve({ spender: address(invoiceModule), amount: invoices[invoiceId].payment.amount });
+
+        // Pay the invoice first (status will be updated to `Ongoing`)
+        invoiceModule.payInvoice{ value: invoices[invoiceId].payment.amount }({ id: invoiceId });
+
+        // Make Eve the caller who IS NOT the initial stream sender but rather the recipient
+        vm.startPrank({ msgSender: users.eve });
+
+        // Expect the call to revert with the {OnlyInitialStreamSender} error
+        vm.expectRevert(abi.encodeWithSelector(Errors.OnlyInitialStreamSender.selector, users.bob));
+
+        // Run the test
+        invoiceModule.cancelInvoice({ id: invoiceId });
+    }
+
+    function test_CancelInvoice_PaymentMethodTranchedStream_StatusOngoing()
+        external
+        whenInvoiceNotAlreadyPaid
+        whenInvoiceNotCanceled
+        givenPaymentMethodTranchedStream
+        givenInvoiceStatusOngoing
+        whenSenderInitialStreamSender
+    {
+        // Set current invoice as a tranched stream-based one
+        uint256 invoiceId = 4;
+
+        // The invoice must be paid for its status to be updated to `Ongoing`
+        // Make Bob the payer of the invoice (also Bob will be the initial stream sender)
+        vm.startPrank({ msgSender: users.bob });
+
+        // Approve the {InvoiceModule} to transfer the USDT tokens on Bob's behalf
+        usdt.approve({ spender: address(invoiceModule), amount: invoices[invoiceId].payment.amount });
+
+        // Pay the invoice first (status will be updated to `Ongoing`)
+        invoiceModule.payInvoice{ value: invoices[invoiceId].payment.amount }({ id: invoiceId });
+
+        // Expect the {InvoiceCanceled} event to be emitted
+        vm.expectEmit();
+        emit Events.InvoiceCanceled({ id: invoiceId });
+
+        // Run the test
+        invoiceModule.cancelInvoice({ id: invoiceId });
+
+        // Assert the actual and expected invoice status
+        Types.Invoice memory invoice = invoiceModule.getInvoice({ id: invoiceId });
+        assertEq(uint8(invoice.status), uint8(Types.Status.Canceled));
     }
 }

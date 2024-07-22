@@ -29,7 +29,7 @@ abstract contract CancelInvoice_Integration_Shared_Test is Integration_Test, Pay
         _;
     }
 
-    modifier whenSenderStreamSender() {
+    modifier whenSenderInitialStreamSender() {
         _;
     }
 }

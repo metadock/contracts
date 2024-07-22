@@ -19,9 +19,9 @@ cancelInvoice.t.sol
         │   │       ├── it should mark the invoice as Canceled
         │   │       └── it should emit an {InvoiceCanceled} event
         │   └── given the invoice status is Ongoing
-        │        ├── when the sender IS NOT the stream's sender
-        │        │   └── it should revert with the {SablierV2Lockup_Unauthorized} error 
-        │        └── when the sender IS the stream's sender 
+        │        ├── when the sender IS NOT the initial stream sender
+        │        │   └── it should revert with the {OnlyInitialStreamSender} error 
+        │        └── when the sender IS the initial stream sender 
         │            ├── it should mark the invoice as Canceled
         │            └── it should emit an {InvoiceCanceled} event
         └── given the payment method is tranched stream-based
@@ -32,9 +32,9 @@ cancelInvoice.t.sol
             │       ├── it should mark the invoice as Canceled
             │       └── it should emit an {InvoiceCanceled} event
             └── given the invoice status is Ongoing
-                ├── when the sender IS NOT the stream's sender
-                │   └──it should revert with the {SablierV2Lockup_Unauthorized} error 
-                └── when the sender IS the stream's sender 
+                ├── when the sender IS NOT the initial stream sender
+                │   └──it should revert with the {OnlyInitialStreamSender} error 
+                └── when the sender IS the initial stream sender 
                     ├── it should mark the invoice as Canceled
                     └── it should emit an {InvoiceCanceled} event
         
