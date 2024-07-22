@@ -16,7 +16,7 @@ import { Types } from "./../libraries/Types.sol";
 
 /// @title StreamManager
 /// @dev See the documentation in {IStreamManager}
-contract StreamManager is IStreamManager {
+abstract contract StreamManager is IStreamManager {
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -40,6 +40,8 @@ contract StreamManager is IStreamManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Stores the initial address of the account that started the stream
+    /// By default, each stream will be created by this contract (the sender address of each stream will be address(this))
+    /// therefore this mapping is used to allow only authorized senders to execute management-related actions i.e. cancellations
     mapping(uint256 streamId => address initialSender) private _initialStreamSender;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -68,13 +70,6 @@ contract StreamManager is IStreamManager {
         _;
     }
 
-    /// @notice Reverts if the `msg.sender` is not the initial stream sender (creator of the stream)
-    modifier onlyInitialStreamSender(uint256 streamId) {
-        address initialSender = _initialStreamSender[streamId];
-        if (msg.sender != initialSender) revert Errors.OnlyInitialStreamSender(initialSender);
-        _;
-    }
-
     /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -93,7 +88,7 @@ contract StreamManager is IStreamManager {
         // Create the Lockup Linear stream
         streamId = _createLinearStream(asset, totalAmount, startTime, endTime, recipient);
 
-        // Set `msg.sender` as the initial stream sender to allow secure stream management
+        // Set `msg.sender` as the initial stream sender to allow authenticated stream management
         _initialStreamSender[streamId] = msg.sender;
     }
 
@@ -112,7 +107,7 @@ contract StreamManager is IStreamManager {
         // Create the Lockup Linear stream
         streamId = _createTranchedStream(asset, totalAmount, startTime, recipient, numberOfTranches, recurrence);
 
-        // Set `msg.sender` as the initial stream sender to allow secure stream management
+        // Set `msg.sender` as the initial stream sender to allow authenticated stream management
         _initialStreamSender[streamId] = msg.sender;
     }
 
@@ -145,11 +140,13 @@ contract StreamManager is IStreamManager {
 
     /// @inheritdoc IStreamManager
     function cancelLinearStream(uint256 streamId) public {
+        // Checks, Effect, Interactions
         _cancelStream({ sablier: LOCKUP_LINEAR, streamId: streamId });
     }
 
     /// @inheritdoc IStreamManager
     function cancelTranchedStream(uint256 streamId) public {
+        // Checks, Effect, Interactions
         _cancelStream({ sablier: LOCKUP_TRANCHED, streamId: streamId });
     }
 
@@ -247,17 +244,17 @@ contract StreamManager is IStreamManager {
     }
 
     /// @dev Withdraws from either a linear or tranched stream
-    function _withdrawStream(
-        ISablierV2Lockup sablier,
-        uint256 streamId,
-        address to,
-        uint128 amount
-    ) internal onlyInitialStreamSender(streamId) {
+    function _withdrawStream(ISablierV2Lockup sablier, uint256 streamId, address to, uint128 amount) internal {
         sablier.withdraw(streamId, to, amount);
     }
 
     /// @dev Cancels the `streamId` stream
-    function _cancelStream(ISablierV2Lockup sablier, uint256 streamId) internal onlyInitialStreamSender(streamId) {
+    function _cancelStream(ISablierV2Lockup sablier, uint256 streamId) internal {
+        // Checks: the `msg.sender` is the initial stream creator
+        address initialSender = _initialStreamSender[streamId];
+        if (msg.sender != initialSender) revert Errors.OnlyInitialStreamSender(initialSender);
+
+        // Cancel the stream
         sablier.cancel(streamId);
     }
 
