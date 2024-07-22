@@ -72,6 +72,9 @@ interface IInvoiceModule {
     /// @notice Cancels the `id` invoice
     ///
     /// Notes:
+    /// - A transfer-based invoice can be canceled only by its creator (recipient)
+    /// - A linear/tranched stream-based invoice can be canceled by its creator only if its
+    /// status is `Pending`; otherwise only the stream sender can cancel it
     /// - if the invoice has a linear or tranched stream payment method, the streaming flow will be
     /// stopped and the remaining funds will be refunded to the stream payer
     ///

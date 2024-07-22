@@ -264,7 +264,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
 
         // Assert the actual and the expected state of the Sablier v2 linear stream
         LockupLinear.StreamLL memory stream = invoiceModule.getLinearStream({ streamId: 1 });
-        assertEq(stream.sender, users.bob);
+        assertEq(stream.sender, address(invoiceModule));
         assertEq(stream.recipient, users.eve);
         assertEq(address(stream.asset), address(usdt));
         assertEq(stream.startTime, invoice.startTime);
@@ -316,7 +316,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
 
         // Assert the actual and the expected state of the Sablier v2 tranched stream
         LockupTranched.StreamLT memory stream = invoiceModule.getTranchedStream({ streamId: 1 });
-        assertEq(stream.sender, users.bob);
+        assertEq(stream.sender, address(invoiceModule));
         assertEq(stream.recipient, users.eve);
         assertEq(address(stream.asset), address(usdt));
         assertEq(stream.startTime, invoice.startTime);
