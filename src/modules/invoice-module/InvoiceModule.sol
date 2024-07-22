@@ -213,33 +213,27 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
         if (invoice.status == Types.Status.Paid) {
             revert Errors.CannotCancelPaidInvoice();
         } else if (invoice.status == Types.Status.Canceled) {
-            revert Errors.InvoiceAlreadyCanceled();
+            revert Errors.CannotCancelCanceledInvoice();
         }
 
         // Checks: the `msg.sender` is the creator if dealing with a transfer-based invoice
-        // or a linear/tranched stream-based invoice which was not paid yet (not streaming)
         //
         // Notes:
-        // - Once a linear or tranched stream is created, the `msg.sender` is checked in the
+        // - for a linear or tranched stream-based invoice, the `msg.sender` is checked in the
         // {SablierV2Lockup} `cancel` method
-        if (invoice.payment.method == Types.Method.Transfer || invoice.status == Types.Status.Pending) {
+        if (invoice.payment.method == Types.Method.Transfer) {
             if (invoice.recipient != msg.sender) {
                 revert Errors.InvoiceOwnerUnauthorized();
             }
         }
+
         // Effects: cancel the stream accordingly depending on its type
-        //
-        // Notes:
-        // - A transfer-based invoice can be canceled directly
-        // - A linear or tranched stream MUST be canceled by calling the `cancel` method on the according
-        // {ISablierV2Lockup} contract
-        else if (invoice.status == Types.Status.Ongoing) {
-            if (invoice.payment.method == Types.Method.LinearStream) {
-                cancelLinearStream({ streamId: invoice.payment.streamId });
-            } else if (invoice.payment.method == Types.Method.TranchedStream) {
-                cancelTranchedStream({ streamId: invoice.payment.streamId });
-            }
+        if (invoice.payment.method == Types.Method.LinearStream) {
+            cancelLinearStream({ streamId: invoice.payment.streamId });
+        } else if (invoice.payment.method == Types.Method.TranchedStream) {
+            cancelTranchedStream({ streamId: invoice.payment.streamId });
         }
+
         // Effects: mark the invoice as canceled
         _invoices[id].status = Types.Status.Canceled;
 

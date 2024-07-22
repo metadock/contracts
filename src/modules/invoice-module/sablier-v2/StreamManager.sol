@@ -36,13 +36,6 @@ contract StreamManager is IStreamManager {
     UD60x18 public override brokerFee;
 
     /*//////////////////////////////////////////////////////////////////////////
-                                  PRIVATE STORAGE
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @dev Stores the initial address of the account that started the stream
-    mapping(uint256 streamId => address initialSender) private _initialStreamSender;
-
-    /*//////////////////////////////////////////////////////////////////////////
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -68,13 +61,6 @@ contract StreamManager is IStreamManager {
         _;
     }
 
-    /// @notice Reverts if the `msg.sender` is not the initial stream sender (creator of the stream)
-    modifier onlyInitialStreamSender(uint256 streamId) {
-        address initialSender = _initialStreamSender[streamId];
-        if (msg.sender != initialSender) revert Errors.OnlyInitialStreamSender(initialSender);
-        _;
-    }
-
     /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -92,9 +78,6 @@ contract StreamManager is IStreamManager {
 
         // Create the Lockup Linear stream
         streamId = _createLinearStream(asset, totalAmount, startTime, endTime, recipient);
-
-        // Set `msg.sender` as the initial stream sender to allow secure stream management
-        _initialStreamSender[streamId] = msg.sender;
     }
 
     /// @inheritdoc IStreamManager
@@ -111,9 +94,6 @@ contract StreamManager is IStreamManager {
 
         // Create the Lockup Linear stream
         streamId = _createTranchedStream(asset, totalAmount, startTime, recipient, numberOfTranches, recurrence);
-
-        // Set `msg.sender` as the initial stream sender to allow secure stream management
-        _initialStreamSender[streamId] = msg.sender;
     }
 
     /// @inheritdoc IStreamManager
@@ -185,7 +165,7 @@ contract StreamManager is IStreamManager {
         LockupLinear.CreateWithTimestamps memory params;
 
         // Declare the function parameters
-        params.sender = address(this); // The sender will be able to cancel the stream
+        params.sender = msg.sender; // The sender will be able to cancel the stream
         params.recipient = recipient; // The recipient of the streamed assets
         params.totalAmount = totalAmount; // Total amount is the amount inclusive of all fees
         params.asset = asset; // The streaming asset
@@ -213,7 +193,7 @@ contract StreamManager is IStreamManager {
         LockupTranched.CreateWithTimestamps memory params;
 
         // Declare the function parameters
-        params.sender = address(this); // The sender will be able to cancel the stream
+        params.sender = msg.sender; // The sender will be able to cancel the stream
         params.recipient = recipient; // The recipient of the streamed assets
         params.totalAmount = totalAmount; // Total amount is the amount inclusive of all fees
         params.asset = asset; // The streaming asset
@@ -247,17 +227,12 @@ contract StreamManager is IStreamManager {
     }
 
     /// @dev Withdraws from either a linear or tranched stream
-    function _withdrawStream(
-        ISablierV2Lockup sablier,
-        uint256 streamId,
-        address to,
-        uint128 amount
-    ) internal onlyInitialStreamSender(streamId) {
+    function _withdrawStream(ISablierV2Lockup sablier, uint256 streamId, address to, uint128 amount) internal {
         sablier.withdraw(streamId, to, amount);
     }
 
     /// @dev Cancels the `streamId` stream
-    function _cancelStream(ISablierV2Lockup sablier, uint256 streamId) internal onlyInitialStreamSender(streamId) {
+    function _cancelStream(ISablierV2Lockup sablier, uint256 streamId) internal {
         sablier.cancel(streamId);
     }
 

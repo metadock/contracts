@@ -83,22 +83,10 @@ library Errors {
     /// @notice Thrown when a tranched stream has a one-off recurrence type
     error TranchedStreamInvalidOneOffRecurence();
 
-    /// @notice Thrown when an attempt is made to cancel an already paid invoice
-    error CannotCancelPaidInvoice();
-
-    /// @notice Thrown when an attempt is made to cancel an already canceled invoice
-    error InvoiceAlreadyCanceled();
-
-    /// @notice Thrown when the caller is not the initial stream sender
-    error OnlyInitialStreamSender(address initialSender);
-
     /*//////////////////////////////////////////////////////////////////////////
                                     STREAM-MANAGER
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Thrown when the caller is not the broker admin
     error OnlyBrokerAdmin();
-
-    /// @notice Thrown when `msg.sender` is not the stream's sender
-    error SablierV2Lockup_Unauthorized(uint256 streamId, address caller);
 }
