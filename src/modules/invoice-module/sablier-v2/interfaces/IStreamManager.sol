@@ -100,8 +100,14 @@ interface IStreamManager {
     function withdrawTranchedStream(uint256 streamId, address to, uint128 amount) external;
 
     /// @notice See the documentation in {ISablierV2Lockup-cancel}
+    ///
+    /// Notes:
+    /// - Reverts with {OnlyInitialStreamSender} if `msg.sender` is not the initial stream creator
     function cancelLinearStream(uint256 streamId) external;
 
     /// @notice See the documentation in {ISablierV2Lockup-cancel}
+    ///
+    /// Notes:
+    /// - Reverts with {OnlyInitialStreamSender} if `msg.sender` is not the initial stream creator
     function cancelTranchedStream(uint256 streamId) external;
 }
