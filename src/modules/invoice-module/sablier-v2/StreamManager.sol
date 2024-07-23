@@ -70,13 +70,6 @@ abstract contract StreamManager is IStreamManager {
         _;
     }
 
-    /// @notice Reverts if the `msg.sender` is not the initial stream sender (creator of the stream)
-    modifier onlyInitialStreamSender(uint256 streamId) {
-        address initialSender = _initialStreamSender[streamId];
-        if (msg.sender != initialSender) revert Errors.OnlyInitialStreamSender(initialSender);
-        _;
-    }
-
     /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -251,12 +244,7 @@ abstract contract StreamManager is IStreamManager {
     }
 
     /// @dev Withdraws from either a linear or tranched stream
-    function _withdrawStream(
-        ISablierV2Lockup sablier,
-        uint256 streamId,
-        address to,
-        uint128 amount
-    ) internal onlyInitialStreamSender(streamId) {
+    function _withdrawStream(ISablierV2Lockup sablier, uint256 streamId, address to, uint128 amount) internal {
         sablier.withdraw(streamId, to, amount);
     }
 
