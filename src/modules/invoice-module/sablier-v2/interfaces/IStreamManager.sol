@@ -93,11 +93,11 @@ interface IStreamManager {
     /// @param newBrokerFee The new broker fee
     function updateStreamBrokerFee(UD60x18 newBrokerFee) external;
 
-    /// @notice See the documentation in {ISablierV2Lockup-withdraw}
-    function withdrawLinearStream(uint256 streamId, address to, uint128 amount) external;
+    /// @notice See the documentation in {ISablierV2Lockup-withdrawMax}
+    function withdrawLinearStream(uint256 streamId, address to) external;
 
-    /// @notice See the documentation in {ISablierV2Lockup-withdraw}
-    function withdrawTranchedStream(uint256 streamId, address to, uint128 amount) external;
+    /// @notice See the documentation in {ISablierV2Lockup-withdrawMax}
+    function withdrawTranchedStream(uint256 streamId, address to) external;
 
     /// @notice See the documentation in {ISablierV2Lockup-cancel}
     ///
