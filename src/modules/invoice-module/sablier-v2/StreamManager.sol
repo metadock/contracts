@@ -125,13 +125,13 @@ abstract contract StreamManager is IStreamManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IStreamManager
-    function withdrawLinearStream(uint256 streamId, address to, uint128 amount) public {
-        _withdrawStream({ sablier: LOCKUP_LINEAR, streamId: streamId, to: to, amount: amount });
+    function withdrawLinearStream(uint256 streamId, address to) public {
+        _withdrawStream({ sablier: LOCKUP_LINEAR, streamId: streamId, to: to });
     }
 
     /// @inheritdoc IStreamManager
-    function withdrawTranchedStream(uint256 streamId, address to, uint128 amount) public {
-        _withdrawStream({ sablier: LOCKUP_TRANCHED, streamId: streamId, to: to, amount: amount });
+    function withdrawTranchedStream(uint256 streamId, address to) public {
+        _withdrawStream({ sablier: LOCKUP_TRANCHED, streamId: streamId, to: to });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -244,8 +244,8 @@ abstract contract StreamManager is IStreamManager {
     }
 
     /// @dev Withdraws from either a linear or tranched stream
-    function _withdrawStream(ISablierV2Lockup sablier, uint256 streamId, address to, uint128 amount) internal {
-        sablier.withdraw(streamId, to, amount);
+    function _withdrawStream(ISablierV2Lockup sablier, uint256 streamId, address to) internal {
+        sablier.withdrawMax(streamId, to);
     }
 
     /// @dev Cancels the `streamId` stream
