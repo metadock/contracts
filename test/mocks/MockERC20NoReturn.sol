@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
 /// @notice An implementation of ERC-20 standard forked from the OpenZeppelin v4 library that do not return a boolean upon calling {transferFrom} or {transfer}
