@@ -69,4 +69,13 @@ abstract contract Events {
     /// @notice Emitted when an invoice is canceled
     /// @param id The ID of the invoice
     event InvoiceCanceled(uint256 indexed id);
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                    OWNABLE
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when the address of the owner is updated
+    /// @param oldOwner The address of the previous owner
+    /// @param newOwner The address of the new owner
+    event OwnershipTransferred(address indexed oldOwner, address newOwner);
 }

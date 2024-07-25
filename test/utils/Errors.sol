@@ -101,4 +101,11 @@ library Errors {
 
     /// @notice Thrown when `msg.sender` is not the stream's sender
     error SablierV2Lockup_Unauthorized(uint256 streamId, address caller);
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      OWNABLE
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Thrown when attempting to transfer ownership to the zero address
+    error InvalidOwnerZeroAddress();
 }

@@ -1,4 +1,4 @@
-enableModule.t.sol
+disableModule.t.sol
 ├── when the caller IS NOT the container owner
 │   └── it should revert with the {Unauthorized} error
 └── when the caller IS the container owner
