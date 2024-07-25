@@ -37,4 +37,11 @@ library Errors {
 
     /// @notice Thrown when a container tries to execute a method on a non-enabled module
     error ModuleNotEnabled();
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      OWNABLE
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Thrown when attempting to transfer ownership to the zero address
+    error InvalidOwnerZeroAddress();
 }

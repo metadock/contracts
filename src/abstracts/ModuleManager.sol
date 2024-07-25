@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.26;
 
-import { IModuleManager } from "./interfaces/IModuleManager.sol";
-import { Errors } from "./libraries/Errors.sol";
+import { IModuleManager } from "../interfaces/IModuleManager.sol";
+import { Errors } from "../libraries/Errors.sol";
 
 /// @title ModuleManager
 /// @notice See the documentation in {IModuleManager}
-contract ModuleManager is IModuleManager {
+abstract contract ModuleManager is IModuleManager {
     /*//////////////////////////////////////////////////////////////////////////
                                   PUBLIC STORAGE
     //////////////////////////////////////////////////////////////////////////*/

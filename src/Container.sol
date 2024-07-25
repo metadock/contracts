@@ -6,23 +6,17 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import { IContainer } from "./interfaces/IContainer.sol";
-import { ModuleManager } from "./ModuleManager.sol";
+import { ModuleManager } from "./abstracts/ModuleManager.sol";
+import { Ownable } from "./abstracts/Ownable.sol";
 import { IModuleManager } from "./interfaces/IModuleManager.sol";
 import { Errors } from "./libraries/Errors.sol";
 import { ExcessivelySafeCall } from "@nomad-xyz/excessively-safe-call/src/ExcessivelySafeCall.sol";
 
 /// @title Container
 /// @notice See the documentation in {IContainer}
-contract Container is IContainer, ModuleManager {
+contract Container is IContainer, Ownable, ModuleManager {
     using SafeERC20 for IERC20;
     using ExcessivelySafeCall for address;
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                  PRIVATE STORAGE
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @dev The address of the account that deployed this container
-    address private owner;
 
     /*//////////////////////////////////////////////////////////////////////////
                                   PUBLIC STORAGE
@@ -39,19 +33,7 @@ contract Container is IContainer, ModuleManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Initializes the address of the container owner and enables the initial module(s)
-    constructor(address _owner, address[] memory _initialModules) ModuleManager(_initialModules) {
-        owner = _owner;
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                      MODIFIERS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @notice Reverts if the `msg.sender` is not the owner of the container
-    modifier onlyOwner() {
-        if (msg.sender != owner) revert Errors.Unauthorized();
-        _;
-    }
+    constructor(address _owner, address[] memory _initialModules) Ownable(_owner) ModuleManager(_initialModules) {}
 
     /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
