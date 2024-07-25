@@ -30,18 +30,6 @@ interface IContainer is IERC165 {
     event ModuleExecutionSucceded(address indexed module, uint256 value, bytes data);
 
     /*//////////////////////////////////////////////////////////////////////////
-                                 CONSTANT FUNCTIONS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @notice Retrieves the amount of native token (ETH) locked in the container for current/upcoming operations
-    function nativeLocked() external view returns (uint256 balance);
-
-    /// @notice Retrieves the amount of `asset` ERC-20 asset locked in the container for current/upcoming operations
-    /// @param asset The address of the ERC-20 token
-    /// @return balance The amount of ERC-20 token locked
-    function erc20Locked(IERC20 asset) external view returns (uint256 balance);
-
-    /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 

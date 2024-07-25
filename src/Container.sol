@@ -19,16 +19,6 @@ contract Container is IContainer, Ownable, ModuleManager {
     using ExcessivelySafeCall for address;
 
     /*//////////////////////////////////////////////////////////////////////////
-                                  PUBLIC STORAGE
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @inheritdoc IContainer
-    uint256 public override nativeLocked;
-
-    /// @inheritdoc IContainer
-    mapping(IERC20 asset => uint256) public override erc20Locked;
-
-    /*//////////////////////////////////////////////////////////////////////////
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -66,7 +56,7 @@ contract Container is IContainer, Ownable, ModuleManager {
     /// @inheritdoc IContainer
     function withdrawERC20(IERC20 asset, uint256 amount) public onlyOwner {
         // Checks: the available ERC20 balance of the container is greater enough to support the withdrawal
-        if (amount > asset.balanceOf(address(this)) - erc20Locked[asset]) revert Errors.InsufficientERC20ToWithdraw();
+        if (amount > asset.balanceOf(address(this))) revert Errors.InsufficientERC20ToWithdraw();
 
         // Interactions: withdraw by transferring the amount to the sender
         asset.safeTransfer({ to: msg.sender, value: amount });
@@ -78,7 +68,7 @@ contract Container is IContainer, Ownable, ModuleManager {
     /// @inheritdoc IContainer
     function withdrawNative(uint256 amount) public onlyOwner {
         // Checks: the native balance of the container minus the amount locked for operations is greater than the requested amount
-        if (amount > address(this).balance - nativeLocked) revert Errors.InsufficientNativeToWithdraw();
+        if (amount > address(this).balance) revert Errors.InsufficientNativeToWithdraw();
 
         // Interactions: withdraw by transferring the amount to the sender
         (bool success, ) = payable(msg.sender).call{ value: amount }("");
