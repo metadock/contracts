@@ -62,7 +62,7 @@ contract Container is IContainer, ModuleManager {
         address module,
         uint256 value,
         bytes memory data
-    ) external onlyOwner onlyEnabledModule(module) returns (bool success) {
+    ) public onlyOwner onlyEnabledModule(module) returns (bool success) {
         // Allocate all the gas to the executed module method
         uint256 txGas = gasleft();
 
@@ -82,7 +82,7 @@ contract Container is IContainer, ModuleManager {
     }
 
     /// @inheritdoc IContainer
-    function depositERC20(IERC20 asset, uint256 amount) external {
+    function depositERC20(IERC20 asset, uint256 amount) public {
         // Checks: against the non-zero token address
         if (address(asset) == address(0)) {
             revert Errors.InvalidAssetZeroAddress();
@@ -101,7 +101,7 @@ contract Container is IContainer, ModuleManager {
     }
 
     /// @inheritdoc IContainer
-    function withdrawERC20(IERC20 asset, uint256 amount) external onlyOwner {
+    function withdrawERC20(IERC20 asset, uint256 amount) public onlyOwner {
         // Checks: the available ERC20 balance of the container is greater enough to support the withdrawal
         if (amount > asset.balanceOf(address(this)) - erc20Locked[asset]) revert Errors.InsufficientERC20ToWithdraw();
 
@@ -113,7 +113,7 @@ contract Container is IContainer, ModuleManager {
     }
 
     /// @inheritdoc IContainer
-    function withdrawNative(uint256 amount) external onlyOwner {
+    function withdrawNative(uint256 amount) public onlyOwner {
         // Checks: the native balance of the container minus the amount locked for operations is greater than the requested amount
         if (amount > address(this).balance - nativeLocked) revert Errors.InsufficientNativeToWithdraw();
 
@@ -129,6 +129,11 @@ contract Container is IContainer, ModuleManager {
     /// @inheritdoc IModuleManager
     function enableModule(address module) public override onlyOwner {
         super.enableModule(module);
+    }
+
+    /// @inheritdoc IModuleManager
+    function disableModule(address module) public override onlyOwner {
+        super.disableModule(module);
     }
 
     /// @dev Allow container to receive native token (ETH)

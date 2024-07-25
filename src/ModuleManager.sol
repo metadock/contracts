@@ -44,6 +44,11 @@ contract ModuleManager is IModuleManager {
         _enableModule(module);
     }
 
+    /// @inheritdoc IModuleManager
+    function disableModule(address module) public virtual {
+        _enableModule(module);
+    }
+
     /*//////////////////////////////////////////////////////////////////////////
                                 INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -66,6 +71,14 @@ contract ModuleManager is IModuleManager {
         isModuleEnabled[module] = true;
 
         // Log the module enablement
-        emit ModuleEnabled({ module: module });
+        emit ModuleEnabled({ module: module, owner: msg.sender });
+    }
+
+    function _disableModule(address module) internal {
+        // Effect: disable the module
+        isModuleEnabled[module] = false;
+
+        // Log the module disablement
+        emit ModuleDisabled({ module: module, owner: msg.sender });
     }
 }
