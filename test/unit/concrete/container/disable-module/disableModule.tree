@@ -1,0 +1,7 @@
+enableModule.t.sol
+├── when the caller IS NOT the container owner
+│   └── it should revert with the {Unauthorized} error
+└── when the caller IS the container owner
+    └── given module enabled
+        ├── it should mark the module as disabled
+        └── it should emit a {ModuleDisabled} event
