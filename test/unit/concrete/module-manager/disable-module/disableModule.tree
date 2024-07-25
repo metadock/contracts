@@ -1,4 +1,0 @@
-disableModule.t.sol
-└── given the module is enabled
-    ├── it should mark the module as disabled
-    └── it should emit a {ModuleDisabled} event
