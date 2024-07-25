@@ -64,25 +64,6 @@ contract Container is IContainer, Ownable, ModuleManager {
     }
 
     /// @inheritdoc IContainer
-    function depositERC20(IERC20 asset, uint256 amount) public {
-        // Checks: against the non-zero token address
-        if (address(asset) == address(0)) {
-            revert Errors.InvalidAssetZeroAddress();
-        }
-
-        // Checks: the amount is non-zero
-        if (amount == 0) {
-            revert Errors.InvalidAssetZeroAmount();
-        }
-
-        // Interactions: deposit by transferring the amount to the container address
-        asset.safeTransferFrom({ from: msg.sender, to: address(this), value: amount });
-
-        // Log the successful deposit
-        emit AssetDeposited({ sender: msg.sender, asset: address(asset), amount: amount });
-    }
-
-    /// @inheritdoc IContainer
     function withdrawERC20(IERC20 asset, uint256 amount) public onlyOwner {
         // Checks: the available ERC20 balance of the container is greater enough to support the withdrawal
         if (amount > asset.balanceOf(address(this)) - erc20Locked[asset]) revert Errors.InsufficientERC20ToWithdraw();
@@ -121,7 +102,7 @@ contract Container is IContainer, Ownable, ModuleManager {
     /// @dev Allow container to receive native token (ETH)
     receive() external payable {
         // Log the successful native token deposit
-        emit AssetDeposited({ sender: msg.sender, asset: address(0), amount: msg.value });
+        emit NativeDeposited({ sender: msg.sender, amount: msg.value });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
