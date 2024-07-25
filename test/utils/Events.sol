@@ -33,11 +33,11 @@ abstract contract Events {
 
     /// @notice Emitted when a module is enabled on the container
     /// @param module The address of the enabled module
-    event ModuleEnabled(address indexed module);
+    event ModuleEnabled(address indexed module, address indexed owner);
 
     /// @notice Emitted when a module is disabled on the container
     /// @param module The address of the disabled module
-    event ModuleDisabled(address indexed module);
+    event ModuleDisabled(address indexed module, address indexed owner);
 
     /*//////////////////////////////////////////////////////////////////////////
                                     INVOICE

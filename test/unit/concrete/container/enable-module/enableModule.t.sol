@@ -46,7 +46,7 @@ contract EnableModule_Unit_Concrete_Test is Container_Unit_Concrete_Test {
 
         // Expect the {ModuleEnabled} to be emitted
         vm.expectEmit();
-        emit Events.ModuleEnabled({ module: address(mockModule) });
+        emit Events.ModuleEnabled({ module: address(mockModule), owner: users.eve });
 
         // Run the test
         container.enableModule({ module: address(mockModule) });

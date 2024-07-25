@@ -29,7 +29,7 @@ contract EnableModule_Unit_Concrete_Test is ModuleManager_Unit_Concrete_Test {
 
         // Expect the {ModuleEnabled} to be emitted
         vm.expectEmit();
-        emit Events.ModuleEnabled({ module: address(mockModule) });
+        emit Events.ModuleEnabled({ module: address(mockModule), owner: address(this) });
 
         // Run the test
         moduleManager.enableModule({ module: address(mockModule) });
