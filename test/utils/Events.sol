@@ -9,11 +9,10 @@ abstract contract Events {
                                     CONTAINER
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Emitted when an `amount` amount of `asset` ERC-20 asset is deposited on the container
+    /// @notice Emitted when an `amount` amount of `asset` native tokens (ETH) is deposited on the container
     /// @param sender The address of the depositor
-    /// @param asset The address of the deposited ERC-20 token
     /// @param amount The amount of the deposited ERC-20 token
-    event AssetDeposited(address indexed sender, address indexed asset, uint256 amount);
+    event NativeDeposited(address indexed sender, uint256 amount);
 
     /// @notice Emitted when an `amount` amount of `asset` ERC-20 asset is withdrawn from the container
     /// @param sender The address to which the tokens were transferred

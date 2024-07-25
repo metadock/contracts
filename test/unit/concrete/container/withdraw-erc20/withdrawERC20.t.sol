@@ -40,8 +40,8 @@ contract WithdrawERC20_Unit_Concrete_Test is Container_Unit_Concrete_Test {
         // Approve the {Container} contract to spend USDT tokens on behalf of Eve
         usdt.approve({ spender: address(container), amount: 100e6 });
 
-        // Deposit sufficient ERC-20 tokens into the container to enable the withdrawal
-        container.depositERC20({ asset: IERC20(address(usdt)), amount: 100e6 });
+        // Deposit enough ERC-20 tokens into the container to enable the withdrawal
+        usdt.transfer({ recipient: address(container), amount: 100e6 });
         _;
     }
 
