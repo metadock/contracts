@@ -12,11 +12,10 @@ interface IContainer is IERC165 {
                                        EVENTS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Emitted when an `amount` amount of `asset` ERC-20 asset is deposited on the container
+    /// @notice Emitted when an `amount` amount of `asset` native tokens (ETH) is deposited on the container
     /// @param sender The address of the depositor
-    /// @param asset The address of the deposited ERC-20 token
     /// @param amount The amount of the deposited ERC-20 token
-    event AssetDeposited(address indexed sender, address indexed asset, uint256 amount);
+    event NativeDeposited(address indexed sender, uint256 amount);
 
     /// @notice Emitted when an `amount` amount of `asset` ERC-20 asset is withdrawn from the container
     /// @param sender The address to which the tokens were transferred
@@ -31,18 +30,6 @@ interface IContainer is IERC165 {
     event ModuleExecutionSucceded(address indexed module, uint256 value, bytes data);
 
     /*//////////////////////////////////////////////////////////////////////////
-                                 CONSTANT FUNCTIONS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @notice Retrieves the amount of native token (ETH) locked in the container for current/upcoming operations
-    function nativeLocked() external view returns (uint256 balance);
-
-    /// @notice Retrieves the amount of `asset` ERC-20 asset locked in the container for current/upcoming operations
-    /// @param asset The address of the ERC-20 token
-    /// @return balance The amount of ERC-20 token locked
-    function erc20Locked(IERC20 asset) external view returns (uint256 balance);
-
-    /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -51,15 +38,6 @@ interface IContainer is IERC165 {
     /// @param value The amount of wei to provide
     /// @param data The ABI-encode definition of the method (+inputs) to call
     function execute(address module, uint256 value, bytes memory data) external returns (bool success);
-
-    /// @notice Deposits an `amount` amount of `asset` ERC-20 token to the container
-    ///
-    /// Notes:
-    /// - `msg.sender` IS NOT enforced to be the owner of the container
-    ///
-    /// @param asset The address of the ERC-20 token to deposit
-    /// @param amount The amount of the ERC-20 token to deposit
-    function depositERC20(IERC20 asset, uint256 amount) external;
 
     /// @notice Withdraws an `amount` amount of `asset` ERC-20 token from the container
     ///

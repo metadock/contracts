@@ -9,11 +9,10 @@ abstract contract Events {
                                     CONTAINER
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Emitted when an `amount` amount of `asset` ERC-20 asset is deposited on the container
+    /// @notice Emitted when an `amount` amount of `asset` native tokens (ETH) is deposited on the container
     /// @param sender The address of the depositor
-    /// @param asset The address of the deposited ERC-20 token
     /// @param amount The amount of the deposited ERC-20 token
-    event AssetDeposited(address indexed sender, address indexed asset, uint256 amount);
+    event NativeDeposited(address indexed sender, uint256 amount);
 
     /// @notice Emitted when an `amount` amount of `asset` ERC-20 asset is withdrawn from the container
     /// @param sender The address to which the tokens were transferred
@@ -33,11 +32,11 @@ abstract contract Events {
 
     /// @notice Emitted when a module is enabled on the container
     /// @param module The address of the enabled module
-    event ModuleEnabled(address indexed module);
+    event ModuleEnabled(address indexed module, address indexed owner);
 
     /// @notice Emitted when a module is disabled on the container
     /// @param module The address of the disabled module
-    event ModuleDisabled(address indexed module);
+    event ModuleDisabled(address indexed module, address indexed owner);
 
     /*//////////////////////////////////////////////////////////////////////////
                                     INVOICE
@@ -69,4 +68,13 @@ abstract contract Events {
     /// @notice Emitted when an invoice is canceled
     /// @param id The ID of the invoice
     event InvoiceCanceled(uint256 indexed id);
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                    OWNABLE
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when the address of the owner is updated
+    /// @param oldOwner The address of the previous owner
+    /// @param newOwner The address of the new owner
+    event OwnershipTransferred(address indexed oldOwner, address newOwner);
 }

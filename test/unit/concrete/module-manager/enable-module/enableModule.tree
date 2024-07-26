@@ -1,6 +1,0 @@
-enableModule.t.sol
-├── when the module has a zero-code size
-│   └── it should revert with the {InvalidZeroCodeModule} error
-└── when the module has a non-zero code size
-    ├── it should mark the module as enabled
-    └── it should emit a {ModuleEnabled} event
