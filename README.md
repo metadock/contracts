@@ -35,8 +35,10 @@ the same time, a Container can execute arbitrary code on an unlimited number of 
 MetaDock protocol with a modular architecture, providing an opportunity to create an open market of Modules where
 external players can create and integrate their own use-cases into the protocol.
 
-A module must first be enabled through the `ModuleManager` before being made publicly available to MetaDock users.
-Currently, only the MetaDock team can enable or disable modules due to the high-security risks they present.
+A module must first be allowlisted through the `ModuleKeeper` before being made publicly available to MetaDock users.
+Currently, due to the high-security risks, only the MetaDock team can add modules to or remove them from the allowlist.
+
+Once a module is allowlisted, it can be enabled via the `enableModule()` method available on any `Container`.
 
 ### Invoice Module
 
