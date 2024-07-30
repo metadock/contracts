@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.26;
 
-import { IModuleManager } from "../interfaces/IModuleManager.sol";
-import { Errors } from "../libraries/Errors.sol";
+import { IModuleManager } from "./../interfaces/IModuleManager.sol";
+import { ModuleKeeper } from "./../ModuleKeeper.sol";
+import { Errors } from "./../libraries/Errors.sol";
 
 /// @title ModuleManager
 /// @notice See the documentation in {IModuleManager}
@@ -12,14 +13,18 @@ abstract contract ModuleManager is IModuleManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IModuleManager
+    ModuleKeeper public immutable override moduleKeeper;
+
+    /// @inheritdoc IModuleManager
     mapping(address module => bool) public override isModuleEnabled;
 
     /*//////////////////////////////////////////////////////////////////////////
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Initializes the `_initialModules` initial module(s) enabled on a container
-    constructor(address[] memory _initialModules) {
+    /// @dev Initializes the {ModuleKeeper} address and initial module(s) enabled on the container
+    constructor(ModuleKeeper _moduleKeeper, address[] memory _initialModules) {
+        moduleKeeper = _moduleKeeper;
         _enableBatchModules(_initialModules);
     }
 
@@ -62,9 +67,9 @@ abstract contract ModuleManager is IModuleManager {
 
     /// @dev Enables one single module at a time
     function _enableModule(address module) internal {
-        // Check: invalid module due to zero-code size
-        if (module.code.length == 0) {
-            revert Errors.InvalidZeroCodeModule();
+        // Check: module is in the allowlist
+        if (!moduleKeeper.isAllowlisted(module)) {
+            revert Errors.ModuleNotAllowlisted();
         }
 
         // Effect: enable the module

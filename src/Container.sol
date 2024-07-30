@@ -4,13 +4,14 @@ pragma solidity ^0.8.26;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { ExcessivelySafeCall } from "@nomad-xyz/excessively-safe-call/src/ExcessivelySafeCall.sol";
 
 import { IContainer } from "./interfaces/IContainer.sol";
 import { ModuleManager } from "./abstracts/ModuleManager.sol";
 import { Ownable } from "./abstracts/Ownable.sol";
 import { IModuleManager } from "./interfaces/IModuleManager.sol";
 import { Errors } from "./libraries/Errors.sol";
-import { ExcessivelySafeCall } from "@nomad-xyz/excessively-safe-call/src/ExcessivelySafeCall.sol";
+import { ModuleKeeper } from "./ModuleKeeper.sol";
 
 /// @title Container
 /// @notice See the documentation in {IContainer}
@@ -22,8 +23,12 @@ contract Container is IContainer, Ownable, ModuleManager {
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Initializes the address of the container owner and enables the initial module(s)
-    constructor(address _owner, address[] memory _initialModules) Ownable(_owner) ModuleManager(_initialModules) {}
+    /// @dev Initializes the address of the {Container} owner, {ModuleKeeper} and enables the initial module(s)
+    constructor(
+        address _owner,
+        ModuleKeeper _moduleKeeper,
+        address[] memory _initialModules
+    ) Ownable(_owner) ModuleManager(_moduleKeeper, _initialModules) { }
 
     /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
@@ -50,7 +55,9 @@ contract Container is IContainer, Ownable, ModuleManager {
                 revert(add(result, 0x20), 4)
             }
             // Otherwise log the execution success
-        } else emit ModuleExecutionSucceded(module, value, data);
+        } else {
+            emit ModuleExecutionSucceded(module, value, data);
+        }
     }
 
     /// @inheritdoc IContainer
@@ -71,7 +78,7 @@ contract Container is IContainer, Ownable, ModuleManager {
         if (amount > address(this).balance) revert Errors.InsufficientNativeToWithdraw();
 
         // Interactions: withdraw by transferring the amount to the sender
-        (bool success, ) = payable(msg.sender).call{ value: amount }("");
+        (bool success,) = payable(msg.sender).call{ value: amount }("");
         // Revert if the call failed
         if (!success) revert Errors.NativeWithdrawFailed();
 
