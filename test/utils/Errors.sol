@@ -30,11 +30,18 @@ library Errors {
                                   MODULE-MANAGER
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Thrown when the requested module to be enabled is not a contract
-    error InvalidZeroCodeModule();
-
-    /// @notice Thrown when a container tries to execute a method on a non-enabled module
+    /// @notice Thrown when a {Container} tries to execute a method on a non-enabled module
     error ModuleNotEnabled();
+
+    /// @notice Thrown when an attempt is made to enable a non-allowlisted module on a {Container}
+    error ModuleNotAllowlisted();
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                  MODULE-KEEPER
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Thrown when the requested module to be allowlisted is not a valid non-zero code size contract
+    error InvalidZeroCodeModule();
 
     /*//////////////////////////////////////////////////////////////////////////
                                     INVOICE-MODULE

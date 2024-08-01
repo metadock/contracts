@@ -1,0 +1,9 @@
+addToAllowlist.t.sol
+├── when the caller IS NOT the {ModuleKeeper} owner
+│   └── it should revert with the {Unauthorized} error
+└── when the caller IS the {ModuleKeeper} owner
+    ├── when the module has an invalid zero-code size
+    │   └── it should revert with the {InvalidZeroCodeModule} error
+    └── when the module has a valid non-zero code size
+        ├── it should mark the module as allowed
+        └── it should emit a {ModuleAllowlisted} event

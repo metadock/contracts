@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.26;
 
+import { ModuleKeeper } from "./../ModuleKeeper.sol";
+
 /// @title IModuleManager
 /// @notice Contract that provides functionalities to manage multiple modules within a {Container} contract
 interface IModuleManager {
@@ -19,6 +21,9 @@ interface IModuleManager {
     /*//////////////////////////////////////////////////////////////////////////
                                  CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Returns the address of the {ModuleKeeper} contract
+    function moduleKeeper() external view returns (ModuleKeeper);
 
     /// @notice Checks whether the `module` module is enabled on the container
     function isModuleEnabled(address module) external view returns (bool isEnabled);

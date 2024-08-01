@@ -77,4 +77,18 @@ abstract contract Events {
     /// @param oldOwner The address of the previous owner
     /// @param newOwner The address of the new owner
     event OwnershipTransferred(address indexed oldOwner, address newOwner);
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                  MODULE-KEEPER
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when a new module is allowlisted
+    /// @param owner The address of the {ModuleKeeper} owner
+    /// @param module The address of the module to be allowlisted
+    event ModuleAllowlisted(address indexed owner, address indexed module);
+
+    /// @notice Emitted when a module is removed from the allowlist
+    /// @param owner The address of the {ModuleKeeper} owner
+    /// @param module The address of the module to be removed
+    event ModuleRemovedFromAllowlist(address indexed owner, address indexed module);
 }

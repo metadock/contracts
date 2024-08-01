@@ -29,9 +29,6 @@ contract DisableModule_Unit_Concrete_Test is Container_Unit_Concrete_Test {
     }
 
     modifier givenModuleEnabled() {
-        // Create a new mock module
-        MockModule mockModule = new MockModule();
-
         // Enable the {MockModule} first
         container.enableModule({ module: address(mockModule) });
         _;

@@ -9,6 +9,7 @@ import { MockNonCompliantContainer } from "./mocks/MockNonCompliantContainer.sol
 import { MockModule } from "./mocks/MockModule.sol";
 import { MockBadReceiver } from "./mocks/MockBadReceiver.sol";
 import { Container } from "./../src/Container.sol";
+import { ModuleKeeper } from "./../src/ModuleKeeper.sol";
 
 abstract contract Base_Test is Test, Events {
     /*//////////////////////////////////////////////////////////////////////////
@@ -22,6 +23,7 @@ abstract contract Base_Test is Test, Events {
     //////////////////////////////////////////////////////////////////////////*/
 
     Container internal container;
+    ModuleKeeper internal moduleKeeper;
     MockERC20NoReturn internal usdt;
     MockModule internal mockModule;
     MockNonCompliantContainer internal mockNonCompliantContainer;
@@ -42,6 +44,7 @@ abstract contract Base_Test is Test, Events {
         mockModule = new MockModule();
         mockNonCompliantContainer = new MockNonCompliantContainer({ _owner: users.admin });
         mockBadReceiver = new MockBadReceiver();
+        moduleKeeper = new ModuleKeeper({ _initialOwner: users.admin });
 
         // Label the test contracts so we can easily track them
         vm.label({ account: address(usdt), newLabel: "USDT" });
@@ -53,9 +56,23 @@ abstract contract Base_Test is Test, Events {
                             DEPLOYMENT-RELATED FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Deploys a new {Container} contract based on the provided `owner` and `initialModules` input params
-    function deployContainer(address owner, address[] memory initialModules) internal returns (Container _container) {
-        _container = new Container(owner, initialModules);
+    /// @dev Deploys a new {Container} contract based on the provided `owner`, `moduleKeeper` and `initialModules` input params
+    function deployContainer(
+        address _owner,
+        ModuleKeeper _moduleKeeper,
+        address[] memory _initialModules
+    ) internal returns (Container _container) {
+        vm.startPrank({ msgSender: users.admin });
+        for (uint256 i; i < _initialModules.length; ++i) {
+            allowlistModule(_initialModules[i]);
+        }
+        vm.stopPrank();
+
+        _container = new Container(_owner, _moduleKeeper, _initialModules);
+    }
+
+    function allowlistModule(address _module) internal {
+        moduleKeeper.addToAllowlist({ module: _module });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -66,7 +83,7 @@ abstract contract Base_Test is Test, Events {
     function createUser(string memory name) internal returns (address payable) {
         address payable user = payable(makeAddr(name));
         vm.deal({ account: user, newBalance: 100 ether });
-        deal({ token: address(usdt), to: user, give: 10000000e18 });
+        deal({ token: address(usdt), to: user, give: 10_000_000e18 });
 
         return user;
     }

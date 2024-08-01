@@ -28,18 +28,12 @@ abstract contract Integration_Test is Base_Test {
         // Deploy the {InvoiceModule} modul
         deployInvoiceModule();
 
-        // Make Eve the default caller to deploy a new {Container} contract
-        vm.startPrank({ msgSender: users.eve });
-
         // Setup the initial {InvoiceModule} module to be initialized on the {Container}
         address[] memory modules = new address[](1);
         modules[0] = address(invoiceModule);
 
         // Deploy the {Container} contract with the {InvoiceModule} enabled by default
-        container = deployContainer({ owner: users.eve, initialModules: modules });
-
-        // Stop the prank to be able to start a different one in the test suite
-        vm.stopPrank();
+        container = deployContainer({ _owner: users.eve, _moduleKeeper: moduleKeeper, _initialModules: modules });
 
         // Label the test contracts so we can easily track them
         vm.label({ account: address(invoiceModule), newLabel: "InvoiceModule" });
@@ -54,10 +48,8 @@ abstract contract Integration_Test is Base_Test {
     /// @dev Deploys the {InvoiceModule} module by initializing the Sablier v2-required contracts first
     function deployInvoiceModule() internal {
         mockNFTDescriptor = new NFTDescriptorMock();
-        sablierV2LockupLinear = new SablierV2LockupLinear({
-            initialAdmin: users.admin,
-            initialNFTDescriptor: mockNFTDescriptor
-        });
+        sablierV2LockupLinear =
+            new SablierV2LockupLinear({ initialAdmin: users.admin, initialNFTDescriptor: mockNFTDescriptor });
         sablierV2LockupTranched = new SablierV2LockupTranched({
             initialAdmin: users.admin,
             initialNFTDescriptor: mockNFTDescriptor,
