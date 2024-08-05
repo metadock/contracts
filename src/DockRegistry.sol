@@ -17,6 +17,9 @@ contract DockRegistry is IDockRegistry, Ownable {
     /// @inheritdoc IDockRegistry
     ModuleKeeper public immutable override moduleKeeper;
 
+    /// @inheritdoc IDockRegistry
+    mapping(uint256 dockId => address owner) public override ownerOfDock;
+
     /*//////////////////////////////////////////////////////////////////////////
                                    PRIVATE STORAGE
     //////////////////////////////////////////////////////////////////////////*/
@@ -26,9 +29,6 @@ contract DockRegistry is IDockRegistry, Ownable {
 
     /// @dev Retrieves the dock ID of the given container address
     mapping(Container container => uint256 dockId) private _dockIdOfContainer;
-
-    /// @dev Retrieves the owner of the given dock ID
-    mapping(uint256 dockId => address owner) private _ownerOfDock;
 
     /*//////////////////////////////////////////////////////////////////////////
                                     CONSTRUCTOR
@@ -56,7 +56,7 @@ contract DockRegistry is IDockRegistry, Ownable {
             dockId = _dockNextId;
 
             // Effects: set the owner of the freshly created dock
-            _ownerOfDock[dockId] = msg.sender;
+            ownerOfDock[dockId] = msg.sender;
 
             // Effects: increment the next dock ID
             // Use unchecked because the dock ID cannot realistically overflow
@@ -65,7 +65,7 @@ contract DockRegistry is IDockRegistry, Ownable {
             }
         } else {
             // Checks: `msg.sender` is the dock owner
-            if (_ownerOfDock[dockId] != msg.sender) {
+            if (ownerOfDock[dockId] != msg.sender) {
                 revert Errors.SenderNotDockOwner();
             }
         }

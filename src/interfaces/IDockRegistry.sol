@@ -27,6 +27,9 @@ interface IDockRegistry {
     /// @notice Returns the address of the {ModuleKeeper} contract
     function moduleKeeper() external view returns (ModuleKeeper);
 
+    /// @notice Retrieves the owner of the given dock ID
+    function ownerOfDock(uint256 dockId) external view returns (address);
+
     /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
