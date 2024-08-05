@@ -8,14 +8,14 @@ import { ExcessivelySafeCall } from "@nomad-xyz/excessively-safe-call/src/Excess
 
 import { IContainer } from "./interfaces/IContainer.sol";
 import { ModuleManager } from "./abstracts/ModuleManager.sol";
-import { Ownable } from "./abstracts/Ownable.sol";
 import { IModuleManager } from "./interfaces/IModuleManager.sol";
 import { Errors } from "./libraries/Errors.sol";
 import { ModuleKeeper } from "./ModuleKeeper.sol";
+import { DockRegistry } from "./DockRegistry.sol";
 
 /// @title Container
 /// @notice See the documentation in {IContainer}
-contract Container is IContainer, Ownable, ModuleManager {
+contract Container is IContainer, ModuleManager {
     using SafeERC20 for IERC20;
     using ExcessivelySafeCall for address;
 
@@ -25,10 +25,21 @@ contract Container is IContainer, Ownable, ModuleManager {
 
     /// @dev Initializes the address of the {Container} owner, {ModuleKeeper} and enables the initial module(s)
     constructor(
-        address _owner,
-        ModuleKeeper _moduleKeeper,
+        DockRegistry _dockRegistry,
         address[] memory _initialModules
-    ) Ownable(_owner) ModuleManager(_moduleKeeper, _initialModules) { }
+    ) ModuleManager(_dockRegistry, _initialModules) {
+        dockRegistry = _dockRegistry;
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      MODIFIERS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Reverts if the `msg.sender` is not the owner of the {Container} assigned in the registry
+    modifier onlyOwner() {
+        if (msg.sender != dockRegistry.ownerOfContainer(address(this))) revert Errors.SenderNotContainerOwner();
+        _;
+    }
 
     /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
