@@ -20,15 +20,18 @@ contract DockRegistry is IDockRegistry, Ownable {
     /// @inheritdoc IDockRegistry
     mapping(uint256 dockId => address owner) public override ownerOfDock;
 
+    /// @inheritdoc IDockRegistry
+    mapping(Container container => uint256 dockId) public override dockIdOfContainer;
+
+    /// @inheritdoc IDockRegistry
+    mapping(address container => address owner) public override ownerOfContainer;
+
     /*//////////////////////////////////////////////////////////////////////////
                                    PRIVATE STORAGE
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Counter to keep track of the next dock ID
     uint256 private _dockNextId;
-
-    /// @dev Retrieves the dock ID of the given container address
-    mapping(Container container => uint256 dockId) private _dockIdOfContainer;
 
     /*//////////////////////////////////////////////////////////////////////////
                                     CONSTRUCTOR
@@ -71,12 +74,31 @@ contract DockRegistry is IDockRegistry, Ownable {
         }
 
         // Interactions: deploy a new {Container}
-        container = new Container({ _owner: owner, _moduleKeeper: moduleKeeper, _initialModules: initialModules });
+        container = new Container({ _dockRegistry: DockRegistry(address(this)), _initialModules: initialModules });
 
         // Assign the ID of the dock to which the new container belongs
-        _dockIdOfContainer[container] = _dockNextId;
+        dockIdOfContainer[container] = _dockNextId;
+
+        // Assign the owner of the container
+        ownerOfContainer[address(container)] = owner;
 
         // Log the {Container} creation
         emit ContainerCreated(owner, dockId, container, initialModules);
+    }
+
+    /// @inheritdoc IDockRegistry
+    function transferContainerOwnership(Container container, address newOwner) external {
+        // Checks: `msg.sender` is the current owner of the {Container}
+        if (msg.sender != ownerOfContainer[address(container)]) {
+            revert Errors.SenderNotContainerOwner();
+        }
+
+        // Effects: store the current owner to emit in the event
+        // and update in the ownership mapping
+        address owner = ownerOfContainer[address(container)];
+        ownerOfContainer[address(container)] = newOwner;
+
+        // Log the ownership transfer
+        emit ContainerOwnershipTransferred({ container: container, oldOwner: owner, newOwner: newOwner });
     }
 }
