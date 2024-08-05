@@ -34,8 +34,8 @@ contract DockRegistry is IDockRegistry, Ownable {
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Intializes the address of the {ModuleKeeper} contract and sets the next dock ID to start from 1
-    constructor(ModuleKeeper _moduleKeeper) Ownable(msg.sender) {
+    /// @dev Initializes the address of the {ModuleKeeper} contract and sets the next dock ID to start from 1
+    constructor(address initialAdmin, ModuleKeeper _moduleKeeper) Ownable(initialAdmin) {
         _dockNextId = 1;
         moduleKeeper = _moduleKeeper;
     }
