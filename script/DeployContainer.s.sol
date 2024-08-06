@@ -14,6 +14,6 @@ contract DeployContainer is BaseScript {
         address[] memory initialModules
     ) public virtual broadcast returns (Container container) {
         // Deploy a new {Container} through the {DockRegistry}
-        container = dockRegistry.createContainer(dockId, initialOwner, initialModules);
+        container = Container(payable(dockRegistry.createContainer(dockId, initialOwner, initialModules)));
     }
 }
