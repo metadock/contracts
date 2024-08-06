@@ -37,7 +37,7 @@ contract Container is IContainer, ModuleManager {
 
     /// @notice Reverts if the `msg.sender` is not the owner of the {Container} assigned in the registry
     modifier onlyOwner() {
-        if (msg.sender != dockRegistry.ownerOfContainer(address(this))) revert Errors.SenderNotContainerOwner();
+        if (msg.sender != dockRegistry.ownerOfContainer(address(this))) revert Errors.CallerNotContainerOwner();
         _;
     }
 

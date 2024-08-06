@@ -9,14 +9,14 @@ library Errors {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Thrown when `msg.sender` is not the dock owner
-    error SenderNotDockOwner();
+    error CallerNotDockOwner();
 
     /*//////////////////////////////////////////////////////////////////////////
                                     CONTAINER
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Thrown when `msg.sender` is not the {Container} contract owner
-    error SenderNotContainerOwner();
+    error CallerNotContainerOwner();
 
     /// @notice Thrown when a native token (ETH) withdrawal fails
     error NativeWithdrawFailed();
