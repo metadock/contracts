@@ -15,8 +15,8 @@ contract WithdrawERC20_Unit_Concrete_Test is Container_Unit_Concrete_Test {
         // Make Bob the caller for this test suite who is not the owner of the container
         vm.startPrank({ msgSender: users.bob });
 
-        // Expect the next call to revert with the {Unauthorized} error
-        vm.expectRevert(Errors.Unauthorized.selector);
+        // Expect the next call to revert with the {CallerNotContainerOwner} error
+        vm.expectRevert(Errors.CallerNotContainerOwner.selector);
 
         // Run the test
         container.withdrawERC20({ asset: IERC20(address(0x0)), amount: 100e6 });
