@@ -11,6 +11,7 @@ import { MockBadReceiver } from "./mocks/MockBadReceiver.sol";
 import { Container } from "./../src/Container.sol";
 import { ModuleKeeper } from "./../src/ModuleKeeper.sol";
 import { DockRegistry } from "./../src/DockRegistry.sol";
+import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 abstract contract Base_Test is Test, Events {
     /*//////////////////////////////////////////////////////////////////////////
@@ -50,7 +51,11 @@ abstract contract Base_Test is Test, Events {
 
         // Deploy test contracts
         moduleKeeper = new ModuleKeeper({ _initialOwner: users.admin });
-        dockRegistry = new DockRegistry({ _initialOwner: users.admin, _moduleKeeper: moduleKeeper });
+
+        address implementation = address(new DockRegistry());
+        bytes memory data = abi.encodeWithSelector(DockRegistry.initialize.selector, users.admin, moduleKeeper);
+        dockRegistry = DockRegistry(address(new ERC1967Proxy(implementation, data)));
+
         mockModule = new MockModule();
         mockNonCompliantContainer = new MockNonCompliantContainer({ _owner: users.admin });
         mockBadReceiver = new MockBadReceiver();
