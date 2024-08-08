@@ -2,40 +2,9 @@
 pragma solidity ^0.8.26;
 
 import { Types } from "./../../src/modules/invoice-module/libraries/Types.sol";
-import { Container } from "./../../src/Container.sol";
-import { ModuleKeeper } from "./../../src/ModuleKeeper.sol";
 
 /// @notice Abstract contract to store all the events emitted in the tested contracts
 abstract contract Events {
-    /*//////////////////////////////////////////////////////////////////////////
-                                    MODULE-KEEPER
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @notice Emitted when a new {Container} contract gets deployed
-    /// @param owner The address of the owner
-    /// @param dockId The ID of the dock to which this {Container} belongs
-    /// @param container The address of the {Container}
-    /// @param initialModules Array of initially enabled modules
-    event ContainerCreated(
-        address indexed owner, uint256 indexed dockId, Container container, address[] initialModules
-    );
-
-    /// @notice Emitted when the ownership of a {Container} is transferred to a new owner
-    /// @param container The address of the {Container}
-    /// @param oldOwner The address of the current owner
-    /// @param newOwner The address of the new owner
-    event ContainerOwnershipTransferred(Container indexed container, address oldOwner, address newOwner);
-
-    /// @notice Emitted when the ownership of a {Dock} is transferred to a new owner
-    /// @param dockId The address of the {Dock}
-    /// @param oldOwner The address of the current owner
-    /// @param newOwner The address of the new owner
-    event DockOwnershipTransferred(uint256 indexed dockId, address oldOwner, address newOwner);
-
-    /// @notice Emitted when the {ModuleKeeper} address is updated
-    /// @param newModuleKeeper The new address of the {ModuleKeeper}
-    event ModuleKeeperUpdated(ModuleKeeper newModuleKeeper);
-
     /*//////////////////////////////////////////////////////////////////////////
                                     CONTAINER
     //////////////////////////////////////////////////////////////////////////*/

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.26;
 
 import { IModuleManager } from "./../interfaces/IModuleManager.sol";
-import { DockRegistry } from "./../DockRegistry.sol";
 import { ModuleKeeper } from "./../ModuleKeeper.sol";
 import { Errors } from "./../libraries/Errors.sol";
 
@@ -14,7 +13,7 @@ abstract contract ModuleManager is IModuleManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IModuleManager
-    DockRegistry public immutable override dockRegistry;
+    ModuleKeeper public immutable override moduleKeeper;
 
     /// @inheritdoc IModuleManager
     mapping(address module => bool) public override isModuleEnabled;
@@ -24,8 +23,8 @@ abstract contract ModuleManager is IModuleManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Initializes the {ModuleKeeper} address and initial module(s) enabled on the container
-    constructor(DockRegistry _dockRegistry, address[] memory _initialModules) {
-        dockRegistry = _dockRegistry;
+    constructor(ModuleKeeper _moduleKeeper, address[] memory _initialModules) {
+        moduleKeeper = _moduleKeeper;
         _enableBatchModules(_initialModules);
     }
 
@@ -68,8 +67,6 @@ abstract contract ModuleManager is IModuleManager {
 
     /// @dev Enables one single module at a time
     function _enableModule(address module) internal {
-        ModuleKeeper moduleKeeper = dockRegistry.moduleKeeper();
-
         // Check: module is in the allowlist
         if (!moduleKeeper.isAllowlisted(module)) {
             revert Errors.ModuleNotAllowlisted();

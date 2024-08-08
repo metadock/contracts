@@ -10,7 +10,6 @@ import { MockModule } from "./mocks/MockModule.sol";
 import { MockBadReceiver } from "./mocks/MockBadReceiver.sol";
 import { Container } from "./../src/Container.sol";
 import { ModuleKeeper } from "./../src/ModuleKeeper.sol";
-import { DockRegistry } from "./../src/DockRegistry.sol";
 
 abstract contract Base_Test is Test, Events {
     /*//////////////////////////////////////////////////////////////////////////
@@ -23,19 +22,12 @@ abstract contract Base_Test is Test, Events {
                                    TEST CONTRACTS
     //////////////////////////////////////////////////////////////////////////*/
 
-    DockRegistry internal dockRegistry;
     Container internal container;
     ModuleKeeper internal moduleKeeper;
     MockERC20NoReturn internal usdt;
     MockModule internal mockModule;
     MockNonCompliantContainer internal mockNonCompliantContainer;
     MockBadReceiver internal mockBadReceiver;
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                   TEST STORAGE
-    //////////////////////////////////////////////////////////////////////////*/
-
-    address[] internal mockModules;
 
     /*//////////////////////////////////////////////////////////////////////////
                                   SET-UP FUNCTION
@@ -49,14 +41,10 @@ abstract contract Base_Test is Test, Events {
         users = Users({ admin: createUser("admin"), eve: createUser("eve"), bob: createUser("bob") });
 
         // Deploy test contracts
-        moduleKeeper = new ModuleKeeper({ _initialOwner: users.admin });
-        dockRegistry = new DockRegistry({ _initialOwner: users.admin, _moduleKeeper: moduleKeeper });
         mockModule = new MockModule();
         mockNonCompliantContainer = new MockNonCompliantContainer({ _owner: users.admin });
         mockBadReceiver = new MockBadReceiver();
-
-        // Create a mock modules array
-        mockModules.push(address(mockModule));
+        moduleKeeper = new ModuleKeeper({ _initialOwner: users.admin });
 
         // Label the test contracts so we can easily track them
         vm.label({ account: address(usdt), newLabel: "USDT" });
@@ -71,7 +59,7 @@ abstract contract Base_Test is Test, Events {
     /// @dev Deploys a new {Container} contract based on the provided `owner`, `moduleKeeper` and `initialModules` input params
     function deployContainer(
         address _owner,
-        uint256 _dockId,
+        ModuleKeeper _moduleKeeper,
         address[] memory _initialModules
     ) internal returns (Container _container) {
         vm.startPrank({ msgSender: users.admin });
@@ -80,9 +68,7 @@ abstract contract Base_Test is Test, Events {
         }
         vm.stopPrank();
 
-        _container = Container(
-            payable(dockRegistry.createContainer({ dockId: _dockId, owner: _owner, initialModules: _initialModules }))
-        );
+        _container = new Container(_owner, _moduleKeeper, _initialModules);
     }
 
     function allowlistModule(address _module) internal {
@@ -100,14 +86,5 @@ abstract contract Base_Test is Test, Events {
         deal({ token: address(usdt), to: user, give: 10_000_000e18 });
 
         return user;
-    }
-
-    /// @dev Predicts the address of the next contract that is going to be deployed by the `deployer`
-    function computeDeploymentAddress(address deployer) internal view returns (address expectedAddress) {
-        // Calculate the current nonce of the deployer account
-        uint256 deployerNonce = vm.getNonce({ account: address(deployer) });
-
-        // Pre-compute the address of the next contract to be deployed
-        expectedAddress = vm.computeCreateAddress({ deployer: address(deployer), nonce: deployerNonce });
     }
 }

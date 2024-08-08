@@ -10,6 +10,6 @@ contract Container_Unit_Concrete_Test is Base_Test {
         address[] memory modules = new address[](1);
         modules[0] = address(mockModule);
 
-        container = deployContainer({ _owner: users.eve, _dockId: 0, _initialModules: modules });
+        container = deployContainer({ _owner: users.eve, _moduleKeeper: moduleKeeper, _initialModules: modules });
     }
 }

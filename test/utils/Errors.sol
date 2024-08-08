@@ -3,18 +3,11 @@ pragma solidity ^0.8.26;
 
 library Errors {
     /*//////////////////////////////////////////////////////////////////////////
-                                  DOCK-REGISTRY
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @notice Thrown when `msg.sender` is not the dock owner
-    error CallerNotDockOwner();
-
-    /*//////////////////////////////////////////////////////////////////////////
                                     CONTAINER
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Thrown when `msg.sender` is not the {Container} contract owner
-    error CallerNotContainerOwner();
+    error Unauthorized();
 
     /// @notice Thrown when a native token (ETH) withdrawal fails
     error NativeWithdrawFailed();
@@ -122,7 +115,4 @@ library Errors {
 
     /// @notice Thrown when attempting to transfer ownership to the zero address
     error InvalidOwnerZeroAddress();
-
-    /// @notice Thrown when `msg.sender` is not the contract owner
-    error Unauthorized();
 }

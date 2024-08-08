@@ -33,7 +33,7 @@ abstract contract Integration_Test is Base_Test {
         modules[0] = address(invoiceModule);
 
         // Deploy the {Container} contract with the {InvoiceModule} enabled by default
-        container = deployContainer({ _owner: users.eve, _dockId: 0, _initialModules: modules });
+        container = deployContainer({ _owner: users.eve, _moduleKeeper: moduleKeeper, _initialModules: modules });
 
         // Label the test contracts so we can easily track them
         vm.label({ account: address(invoiceModule), newLabel: "InvoiceModule" });
