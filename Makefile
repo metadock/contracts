@@ -62,3 +62,15 @@ deploy-deterministic-module-keeper:
 					--sig "run(string,address)" --rpc-url {RPC_URL} \
 					--private-key $(PRIVATE_KEY) --etherscan-api-key $(ETHERSCAN_API_KEY) \
 					--broadcast --verify
+
+# Deploy the {DockRegistry} contract deterministically 
+# Update the following configs before running the script:
+#	- {INITIAL_OWNER} with the address of the initial owner
+#	- {MODULE_KEEPER} with the address of the {ModuleKeeper} deployment
+#	- {RPC_URL} with the network RPC used for deployment
+deploy-deterministic-dock-registry:
+					forge script script/DeployDeterministicDockRegistry.s.sol:DeployDeterministicDockRegistry \
+					$(CREATE2SALT) {INITIAL_OWNER} {MODULE_KEEPER} \
+					--sig "run(string,address,address)" --rpc-url {RPC_URL} \
+					--private-key $(PRIVATE_KEY) --etherscan-api-key $(ETHERSCAN_API_KEY) \
+					--broadcast --verify

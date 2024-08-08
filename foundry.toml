@@ -4,6 +4,7 @@ out = "out"
 libs = ["lib"]
 optimizer = true
 optimizer_runs = 1000
+gas_reports = ["ModuleKeeper", "DockRegistry", "Container"]
 
 [fmt]
 bracket_spacing = true
