@@ -11,4 +11,14 @@ contract Ownable_Shared_Test is Base_Test {
         Base_Test.setUp();
         ownableMock = new OwnableMock({ _owner: users.admin });
     }
+
+    modifier whenCallerCurrentOwner() {
+        // Make Admin the caller for the next test suite
+        vm.startPrank({ msgSender: users.admin });
+        _;
+    }
+
+    modifier whenNewOwnerNotZeroAddress() {
+        _;
+    }
 }

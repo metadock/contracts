@@ -21,22 +21,12 @@ contract TransferOwnership_Unit_Concrete_Test is Ownable_Shared_Test {
         ownableMock.transferOwnership({ newOwner: users.eve });
     }
 
-    modifier whenCallerCurrentOwner() {
-        // Make Admin the caller for the next test suite
-        vm.startPrank({ msgSender: users.admin });
-        _;
-    }
-
     function test_RevertWhen_NewOwnerZeroAddress() external whenCallerCurrentOwner {
         // Expect the next call to revert with the {InvalidOwnerZeroAddress} error
         vm.expectRevert(Errors.InvalidOwnerZeroAddress.selector);
 
         // Run the test by trying to transfer the ownership to the `0x0000000000000000000000000000000000000000` address
         ownableMock.transferOwnership({ newOwner: address(0x0) });
-    }
-
-    modifier whenNewOwnerNotZeroAddress() {
-        _;
     }
 
     function test_TransferOwnership() external whenCallerCurrentOwner whenNewOwnerNotZeroAddress {
