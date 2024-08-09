@@ -14,8 +14,8 @@
     <a href="https://x.com/MetaDockApp">
         <img src="https://img.shields.io/twitter/follow/MetaDockApp?label=Follow" alt="Follow on X">
     </a>
-    <a href="https://discord.com/invite/6yPqGwQN">
-        <img src="https://dcbadge.limes.pink/api/server/6yPqGwQN?style=flat" alt="Join Discord">
+    <a href="https://discord.com/invite/yTcSdN2uCN">
+        <img src="https://dcbadge.limes.pink/api/server/yTcSdN2uCN?style=flat" alt="Join Discord">
     </a>
 </p>
 
