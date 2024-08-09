@@ -50,7 +50,7 @@ contract TransferContainerOwnership_Unit_Concrete_Test is DockRegistry_Unit_Conc
         _;
     }
 
-    function test_transferContainerOwnership() external givenContainerCreated whenCallerOwner whenNonZeroOwnerAddress {
+    function test_TransferContainerOwnership() external givenContainerCreated whenCallerOwner whenNonZeroOwnerAddress {
         // Expect the {ContainerOwnershipTransferred} to be emitted
         vm.expectEmit();
         emit Events.ContainerOwnershipTransferred({ container: container, oldOwner: users.eve, newOwner: users.bob });

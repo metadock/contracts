@@ -11,7 +11,7 @@ clean :; forge clean
 
 # Generate coverage stats using lcov and genhtml
 # See https://github.com/hyperlane-xyz/hyperlane-monorepo/blob/main/solidity/coverage.sh
-tests-coverage :; ./coverage.sh
+tests-coverage :; ./script/coverage.sh
 
 # Deploy the {InvoiceModule} contract deterministically
 # See Sablier V2 deployments: https://docs.sablier.com/contracts/v2/deployments

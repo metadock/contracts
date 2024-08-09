@@ -9,11 +9,10 @@ import { DockRegistry } from "./../src/DockRegistry.sol";
 contract DeployContainer is BaseScript {
     function run(
         DockRegistry dockRegistry,
-        address initialOwner,
         uint256 dockId,
         address[] memory initialModules
     ) public virtual broadcast returns (Container container) {
         // Deploy a new {Container} through the {DockRegistry}
-        container = Container(payable(dockRegistry.createContainer(dockId, initialOwner, initialModules)));
+        container = Container(payable(dockRegistry.createContainer(dockId, initialModules)));
     }
 }

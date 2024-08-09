@@ -1,0 +1,9 @@
+transferOwnership.t.sol
+├── when the caller IS NOT the current owner
+│   └── it should revert with the {Unauthorized} error
+└── when the caller IS the current owner
+    ├── when the new owner IS the zero address
+    │   └── it should revert with the {InvalidOwnerZeroAddress} error
+    └── when the new owner IS NOT the zero address
+        ├── it should update the owner
+        └── it should emit a {OwnershipTransferred} event

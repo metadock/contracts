@@ -38,11 +38,12 @@ contract CreateContainer_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
         });
 
         // Run the test
-        dockRegistry.createContainer({ owner: users.bob, dockId: 0, initialModules: mockModules });
+        vm.prank({ msgSender: users.bob });
+        dockRegistry.createContainer({ dockId: 0, initialModules: mockModules });
 
         // Assert the expected and actual owner of the dock
         address actualOwnerOfDock = dockRegistry.ownerOfDock({ dockId: 1 });
-        assertEq(address(this), actualOwnerOfDock);
+        assertEq(users.bob, actualOwnerOfDock);
 
         // Assert the expected and actual owner of the {Container}
         address actualOwnerOfContainer = dockRegistry.ownerOfContainer({ container: expectedContainer });
@@ -58,17 +59,11 @@ contract CreateContainer_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
         address[] memory modules = new address[](1);
         modules[0] = address(mockModule);
 
-        container = deployContainer({ _owner: users.eve, _dockId: 0, _initialModules: modules });
+        container = deployContainer({ _owner: users.bob, _dockId: 0, _initialModules: modules });
         _;
     }
 
-    modifier whenCallerNotDockOwner() {
-        // Make Bob the caller in this test suite as he's not the owner of the dock #1
-        vm.startPrank({ msgSender: users.bob });
-        _;
-    }
-
-    function test_RevertWhen_CallerNotDockOwner() external whenDockIdNonZero whenCallerNotDockOwner {
+    function test_RevertWhen_CallerNotDockOwner() external whenDockIdNonZero {
         // Create a mock modules array
         address[] memory modules = new address[](1);
         modules[0] = address(mockModule);
@@ -77,7 +72,8 @@ contract CreateContainer_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
         vm.expectRevert(Errors.CallerNotDockOwner.selector);
 
         // Run the test
-        dockRegistry.createContainer({ owner: users.bob, dockId: 1, initialModules: modules });
+        vm.prank({ msgSender: users.eve });
+        dockRegistry.createContainer({ dockId: 1, initialModules: modules });
     }
 
     modifier whenCallerDockOwner() {
@@ -107,11 +103,12 @@ contract CreateContainer_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
         });
 
         // Run the test
-        dockRegistry.createContainer({ owner: users.bob, dockId: 1, initialModules: mockModules });
+        vm.prank({ msgSender: users.bob });
+        dockRegistry.createContainer({ dockId: 1, initialModules: mockModules });
 
         // Assert the expected and actual owner of the dock
         address actualOwnerOfDock = dockRegistry.ownerOfDock({ dockId: 1 });
-        assertEq(address(this), actualOwnerOfDock);
+        assertEq(users.bob, actualOwnerOfDock);
 
         // Assert the expected and actual owner of the {Container}
         address actualOwnerOfContainer = dockRegistry.ownerOfContainer({ container: expectedContainer });

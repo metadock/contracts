@@ -9,3 +9,7 @@ out/
 
 # Dotenv file
 .env
+
+# Others
+.npmrc
+*lcov.info

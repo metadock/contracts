@@ -6,6 +6,7 @@ import { InvoiceModule } from "./../../src/modules/invoice-module/InvoiceModule.
 import { SablierV2LockupLinear } from "@sablier/v2-core/src/SablierV2LockupLinear.sol";
 import { SablierV2LockupTranched } from "@sablier/v2-core/src/SablierV2LockupTranched.sol";
 import { NFTDescriptorMock } from "@sablier/v2-core/test/mocks/NFTDescriptorMock.sol";
+import { MockStreamManager } from "../mocks/MockStreamManager.sol";
 
 abstract contract Integration_Test is Base_Test {
     /*//////////////////////////////////////////////////////////////////////////
@@ -17,6 +18,7 @@ abstract contract Integration_Test is Base_Test {
     NFTDescriptorMock internal mockNFTDescriptor;
     SablierV2LockupLinear internal sablierV2LockupLinear;
     SablierV2LockupTranched internal sablierV2LockupTranched;
+    MockStreamManager internal mockStreamManager;
 
     /*//////////////////////////////////////////////////////////////////////////
                                   SET-UP FUNCTION
@@ -34,6 +36,9 @@ abstract contract Integration_Test is Base_Test {
 
         // Deploy the {Container} contract with the {InvoiceModule} enabled by default
         container = deployContainer({ _owner: users.eve, _dockId: 0, _initialModules: modules });
+
+        // Deploy the mock {StreamManager}
+        mockStreamManager = new MockStreamManager(sablierV2LockupLinear, sablierV2LockupTranched, users.admin);
 
         // Label the test contracts so we can easily track them
         vm.label({ account: address(invoiceModule), newLabel: "InvoiceModule" });
