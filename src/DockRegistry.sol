@@ -70,11 +70,7 @@ contract DockRegistry is IDockRegistry, Initializable, OwnableUpgradeable, UUPSU
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IDockRegistry
-    function createContainer(
-        uint256 dockId,
-        address owner,
-        address[] calldata initialModules
-    ) public returns (address container) {
+    function createContainer(uint256 dockId, address[] calldata initialModules) public returns (address container) {
         // Checks: a new dock must be created first
         if (dockId == 0) {
             // Store the ID of the next dock
@@ -103,10 +99,10 @@ contract DockRegistry is IDockRegistry, Initializable, OwnableUpgradeable, UUPSU
         dockIdOfContainer[container] = dockId;
 
         // Assign the owner of the container
-        ownerOfContainer[container] = owner;
+        ownerOfContainer[container] = msg.sender;
 
         // Log the {Container} creation
-        emit ContainerCreated(owner, dockId, container, initialModules);
+        emit ContainerCreated(msg.sender, dockId, container, initialModules);
     }
 
     /// @inheritdoc IDockRegistry
