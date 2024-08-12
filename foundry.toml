@@ -5,6 +5,10 @@ libs = ["lib"]
 optimizer = true
 optimizer_runs = 1000
 gas_reports = ["ModuleKeeper", "DockRegistry", "Container"]
+ffi = true
+ast = true
+build_info = true
+extra_output = ["storageLayout"]
 
 [fmt]
 bracket_spacing = true
