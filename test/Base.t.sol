@@ -88,6 +88,7 @@ abstract contract Base_Test is Test, Events {
         vm.prank({ msgSender: _owner });
         _container =
             Container(payable(dockRegistry.createContainer({ dockId: _dockId, initialModules: _initialModules })));
+        vm.stopPrank();
     }
 
     function allowlistModule(address _module) internal {
