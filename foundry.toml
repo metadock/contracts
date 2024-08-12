@@ -12,7 +12,7 @@ extra_output = ["storageLayout"]
 
 [profile.default.fuzz]
 max_test_rejects = 500_000
-runs = 100
+runs = 10_000
 
 [fmt]
 bracket_spacing = true
