@@ -125,4 +125,7 @@ library Errors {
 
     /// @notice Thrown when `msg.sender` is not the contract owner
     error Unauthorized();
+
+    /// @notice Thrown when `msg.sender` is not authorized to perform an operation
+    error OwnableUnauthorizedAccount(address account);
 }

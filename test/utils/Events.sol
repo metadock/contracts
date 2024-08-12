@@ -9,7 +9,7 @@ import { UD60x18 } from "@prb/math/src/UD60x18.sol";
 /// @notice Abstract contract to store all the events emitted in the tested contracts
 abstract contract Events {
     /*//////////////////////////////////////////////////////////////////////////
-                                    MODULE-KEEPER
+                                    DOCK-REGISTRY
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when a new {Container} contract gets deployed
@@ -36,6 +36,12 @@ abstract contract Events {
     /// @notice Emitted when the {ModuleKeeper} address is updated
     /// @param newModuleKeeper The new address of the {ModuleKeeper}
     event ModuleKeeperUpdated(ModuleKeeper newModuleKeeper);
+
+    /// @dev Emitted when the contract has been initialized or reinitialized
+    event Initialized(uint64 version);
+
+    /// @dev Emitted when the implementation is upgraded
+    event Upgraded(address indexed implementation);
 
     /*//////////////////////////////////////////////////////////////////////////
                                     CONTAINER
