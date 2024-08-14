@@ -102,13 +102,21 @@ interface IStreamManager {
         address to
     ) external returns (uint128 withdrawnAmount);
 
-    /// @notice See the documentation in {ISablierV2Lockup-streamedAmountOf}
+    /// @notice See the documentation in {ISablierV2Lockup-withdrawableAmountOf}
     /// Notes:
-    /// - `streamType` parameter has been added to retrieve data from the according {ISablierV2Lockup} contract
-    function streamedAmountOf(
+    /// - `streamType` parameter has been added to retrieve from the according {ISablierV2Lockup} contract
+    function withdrawableAmountOf(
         Types.Method streamType,
         uint256 streamId
     ) external view returns (uint128 withdrawableAmount);
+
+    /// @notice See the documentation in {ISablierV2Lockup-streamedAmountOf}
+    /// Notes:
+    /// - `streamType` parameter has been added to retrieve from the according {ISablierV2Lockup} contract
+    function streamedAmountOf(
+        Types.Method streamType,
+        uint256 streamId
+    ) external view returns (uint128 streamedAmount);
 
     /// @notice See the documentation in {ISablierV2Lockup-cancel}
     ///

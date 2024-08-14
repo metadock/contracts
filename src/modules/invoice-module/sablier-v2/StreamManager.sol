@@ -138,11 +138,16 @@ abstract contract StreamManager is IStreamManager {
     }
 
     /// @inheritdoc IStreamManager
-    function streamedAmountOf(
+    function withdrawableAmountOf(
         Types.Method streamType,
         uint256 streamId
     ) public view returns (uint128 withdrawableAmount) {
-        withdrawableAmount = _getISablierV2Lockup(streamType).streamedAmountOf(streamId);
+        withdrawableAmount = _getISablierV2Lockup(streamType).withdrawableAmountOf(streamId);
+    }
+
+    /// @inheritdoc IStreamManager
+    function streamedAmountOf(Types.Method streamType, uint256 streamId) public view returns (uint128 streamedAmount) {
+        streamedAmount = _getISablierV2Lockup(streamType).streamedAmountOf(streamId);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
