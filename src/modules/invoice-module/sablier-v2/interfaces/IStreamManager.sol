@@ -94,10 +94,21 @@ interface IStreamManager {
     function updateStreamBrokerFee(UD60x18 newBrokerFee) external;
 
     /// @notice See the documentation in {ISablierV2Lockup-withdrawMax}
-    function withdrawLinearStream(uint256 streamId, address to) external;
+    /// Notes:
+    /// - `streamType` parameter has been added to withdraw from the according {ISablierV2Lockup} contract
+    function withdrawStream(
+        Types.Method streamType,
+        uint256 streamId,
+        address to
+    ) external returns (uint128 withdrawnAmount);
 
-    /// @notice See the documentation in {ISablierV2Lockup-withdrawMax}
-    function withdrawTranchedStream(uint256 streamId, address to) external;
+    /// @notice See the documentation in {ISablierV2Lockup-streamedAmountOf}
+    /// Notes:
+    /// - `streamType` parameter has been added to retrieve data from the according {ISablierV2Lockup} contract
+    function streamedAmountOf(
+        Types.Method streamType,
+        uint256 streamId
+    ) external view returns (uint128 withdrawableAmount);
 
     /// @notice See the documentation in {ISablierV2Lockup-cancel}
     ///
