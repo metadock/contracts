@@ -88,7 +88,7 @@ library Errors {
     error InvoiceNull();
 
     /// @notice Thrown when `msg.sender` is not the creator (recipient) of the invoice
-    error InvoiceOwnerUnauthorized();
+    error OnlyInvoiceRecipient();
 
     /// @notice Thrown when the payment interval (endTime - startTime) is too short for the selected recurrence
     /// i.e. recurrence is set to weekly but interval is shorter than 1 week

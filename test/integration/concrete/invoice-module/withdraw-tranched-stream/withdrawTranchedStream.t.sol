@@ -2,6 +2,7 @@
 pragma solidity ^0.8.26;
 
 import { WithdrawTranchedStream_Integration_Shared_Test } from "../../../shared/withdrawTranchedStream.t.sol";
+import { Types } from "./../../../../../src/modules/invoice-module/libraries/Types.sol";
 
 contract WithdrawTranchedStream_Integration_Concret_Test is WithdrawTranchedStream_Integration_Shared_Test {
     function setUp() public virtual override {
@@ -10,7 +11,7 @@ contract WithdrawTranchedStream_Integration_Concret_Test is WithdrawTranchedStre
 
     function test_WithdrawTranchedStream() external givenPaymentMethodTranchedStream givenInvoiceStatusOngoing {
         // Set current invoice as a tranched stream-based one
-        uint256 invoiceId = 4;
+        uint256 invoiceId = 5;
         uint256 streamId = 1;
 
         // The invoice must be paid for its status to be updated to `Ongoing`
@@ -36,7 +37,7 @@ contract WithdrawTranchedStream_Integration_Concret_Test is WithdrawTranchedStre
         vm.startPrank({ msgSender: users.eve });
 
         // Run the test
-        invoiceModule.withdrawTranchedStream({ streamId: streamId, to: users.eve });
+        invoiceModule.withdrawStream({ streamType: Types.Method.TranchedStream, streamId: streamId, to: users.eve });
 
         // Assert the current and expected USDT balance of Eve
         assertEq(balanceOfBefore + maxWithdrawableAmount, usdt.balanceOf(users.eve));

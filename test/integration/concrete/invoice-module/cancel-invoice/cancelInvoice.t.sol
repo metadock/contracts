@@ -13,7 +13,7 @@ contract CancelInvoice_Integration_Concret_Test is CancelInvoice_Integration_Sha
 
     function test_RevertWhen_InvoiceIsPaid() external {
         // Set the one-off ETH transfer invoice as current one
-        uint256 invoiceId = 1;
+        uint256 invoiceId = 2;
 
         // Make Bob the payer for the default invoice
         vm.startPrank({ msgSender: users.bob });
@@ -33,7 +33,7 @@ contract CancelInvoice_Integration_Concret_Test is CancelInvoice_Integration_Sha
 
     function test_RevertWhen_InvoiceIsCanceled() external whenInvoiceNotAlreadyPaid {
         // Set the one-off ETH transfer invoice as current one
-        uint256 invoiceId = 1;
+        uint256 invoiceId = 2;
 
         // Make Eve the caller who is the recipient of the invoice
         vm.startPrank({ msgSender: users.eve });
@@ -55,13 +55,13 @@ contract CancelInvoice_Integration_Concret_Test is CancelInvoice_Integration_Sha
         givenPaymentMethodTransfer
     {
         // Set the one-off ETH transfer invoice as current one
-        uint256 invoiceId = 1;
+        uint256 invoiceId = 2;
 
         // Make Bob the caller who IS NOT the recipient of the invoice
         vm.startPrank({ msgSender: users.bob });
 
-        // Expect the call to revert with the {InvoiceOwnerUnauthorized} error
-        vm.expectRevert(Errors.InvoiceOwnerUnauthorized.selector);
+        // Expect the call to revert with the {OnlyInvoiceRecipient} error
+        vm.expectRevert(Errors.OnlyInvoiceRecipient.selector);
 
         // Run the test
         invoiceModule.cancelInvoice({ id: invoiceId });
@@ -75,7 +75,7 @@ contract CancelInvoice_Integration_Concret_Test is CancelInvoice_Integration_Sha
         whenSenderInvoiceRecipient
     {
         // Set the one-off ETH transfer invoice as current one
-        uint256 invoiceId = 1;
+        uint256 invoiceId = 2;
 
         // Make Eve the caller who is the recipient of the invoice
         vm.startPrank({ msgSender: users.eve });
@@ -100,13 +100,13 @@ contract CancelInvoice_Integration_Concret_Test is CancelInvoice_Integration_Sha
         givenInvoiceStatusPending
     {
         // Set current invoice as a linear stream-based one
-        uint256 invoiceId = 3;
+        uint256 invoiceId = 5;
 
         // Make Bob the caller who IS NOT the recipient of the invoice
         vm.startPrank({ msgSender: users.bob });
 
-        // Expect the call to revert with the {InvoiceOwnerUnauthorized} error
-        vm.expectRevert(Errors.InvoiceOwnerUnauthorized.selector);
+        // Expect the call to revert with the {OnlyInvoiceRecipient} error
+        vm.expectRevert(Errors.OnlyInvoiceRecipient.selector);
 
         // Run the test
         invoiceModule.cancelInvoice({ id: invoiceId });
@@ -121,7 +121,7 @@ contract CancelInvoice_Integration_Concret_Test is CancelInvoice_Integration_Sha
         whenSenderInvoiceRecipient
     {
         // Set current invoice as a linear stream-based one
-        uint256 invoiceId = 3;
+        uint256 invoiceId = 5;
 
         // Make Eve the caller who is the recipient of the invoice
         vm.startPrank({ msgSender: users.eve });
@@ -146,7 +146,7 @@ contract CancelInvoice_Integration_Concret_Test is CancelInvoice_Integration_Sha
         givenInvoiceStatusOngoing
     {
         // Set current invoice as a linear stream-based one
-        uint256 invoiceId = 3;
+        uint256 invoiceId = 5;
 
         // The invoice must be paid for its status to be updated to `Ongoing`
         // Make Bob the payer of the invoice (also Bob will be the stream sender)
@@ -177,7 +177,7 @@ contract CancelInvoice_Integration_Concret_Test is CancelInvoice_Integration_Sha
         whenSenderInitialStreamSender
     {
         // Set current invoice as a linear stream-based one
-        uint256 invoiceId = 3;
+        uint256 invoiceId = 5;
 
         // The invoice must be paid for its status to be updated to `Ongoing`
         // Make Bob the payer of the invoice (also Bob will be the initial stream sender)
@@ -209,13 +209,13 @@ contract CancelInvoice_Integration_Concret_Test is CancelInvoice_Integration_Sha
         givenInvoiceStatusPending
     {
         // Set current invoice as a tranched stream-based one
-        uint256 invoiceId = 4;
+        uint256 invoiceId = 5;
 
         // Make Bob the caller who IS NOT the recipient of the invoice
         vm.startPrank({ msgSender: users.bob });
 
-        // Expect the call to revert with the {InvoiceOwnerUnauthorized} error
-        vm.expectRevert(Errors.InvoiceOwnerUnauthorized.selector);
+        // Expect the call to revert with the {OnlyInvoiceRecipient} error
+        vm.expectRevert(Errors.OnlyInvoiceRecipient.selector);
 
         // Run the test
         invoiceModule.cancelInvoice({ id: invoiceId });
@@ -230,7 +230,7 @@ contract CancelInvoice_Integration_Concret_Test is CancelInvoice_Integration_Sha
         whenSenderInvoiceRecipient
     {
         // Set current invoice as a tranched stream-based one
-        uint256 invoiceId = 4;
+        uint256 invoiceId = 5;
 
         // Make Eve the caller who is the recipient of the invoice
         vm.startPrank({ msgSender: users.eve });
@@ -255,7 +255,7 @@ contract CancelInvoice_Integration_Concret_Test is CancelInvoice_Integration_Sha
         givenInvoiceStatusOngoing
     {
         // Set current invoice as a tranched stream-based one
-        uint256 invoiceId = 4;
+        uint256 invoiceId = 5;
 
         // The invoice must be paid for its status to be updated to `Ongoing`
         // Make Bob the payer of the invoice (also Bob will be the stream sender)
@@ -286,7 +286,7 @@ contract CancelInvoice_Integration_Concret_Test is CancelInvoice_Integration_Sha
         whenSenderInitialStreamSender
     {
         // Set current invoice as a tranched stream-based one
-        uint256 invoiceId = 4;
+        uint256 invoiceId = 5;
 
         // The invoice must be paid for its status to be updated to `Ongoing`
         // Make Bob the payer of the invoice (also Bob will be the initial stream sender)

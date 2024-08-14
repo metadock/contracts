@@ -2,6 +2,7 @@
 pragma solidity ^0.8.26;
 
 import { WithdrawLinearStream_Integration_Shared_Test } from "../../../shared/withdrawLinearStream.t.sol";
+import { Types } from "./../../../../../src/modules/invoice-module/libraries/Types.sol";
 
 contract WithdrawLinearStream_Integration_Concret_Test is WithdrawLinearStream_Integration_Shared_Test {
     function setUp() public virtual override {
@@ -10,7 +11,7 @@ contract WithdrawLinearStream_Integration_Concret_Test is WithdrawLinearStream_I
 
     function test_WithdrawLinearStream() external givenPaymentMethodLinearStream givenInvoiceStatusOngoing {
         // Set current invoice as a linear stream-based one
-        uint256 invoiceId = 3;
+        uint256 invoiceId = 4;
         uint256 streamId = 1;
 
         // The invoice must be paid for its status to be updated to `Ongoing`
@@ -36,7 +37,7 @@ contract WithdrawLinearStream_Integration_Concret_Test is WithdrawLinearStream_I
         vm.startPrank({ msgSender: users.eve });
 
         // Run the test
-        invoiceModule.withdrawLinearStream({ streamId: streamId, to: users.eve });
+        invoiceModule.withdrawStream({ streamType: Types.Method.LinearStream, streamId: streamId, to: users.eve });
 
         // Assert the current and expected USDT balance of Eve
         assertEq(balanceOfBefore + maxWithdrawableAmount, usdt.balanceOf(users.eve));
