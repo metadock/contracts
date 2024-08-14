@@ -84,4 +84,13 @@ interface IInvoiceModule {
     ///
     /// @param id The ID of the invoice
     function cancelInvoice(uint256 id) external;
+
+    /// @notice Withdraws the maximum withdrawable amount from the stream associated with the `id` invoice
+    ///
+    /// Notes:
+    /// - reverts if `msg.sender` is not the stream recipient
+    /// - reverts if the payment method of the `id` invoice is not linear or tranched stream based
+    ///
+    /// @param id The ID of the invoice
+    function withdrawInvoiceStream(uint256 id) external;
 }

@@ -250,19 +250,10 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
         emit InvoiceCanceled(id);
     }
 
+    /// @inheritdoc IInvoiceModule
     function withdrawInvoiceStream(uint256 id) external {
         // Load the invoice from storage
         Types.Invoice memory invoice = _invoices[id];
-
-        // Checks: `msg.sender` is the stream recipient
-        if (invoice.recipient != msg.sender) {
-            revert Errors.OnlyInvoiceRecipient();
-        }
-
-        // Checks: the payment method is either linear or tranched stream
-        if (invoice.payment.method == Types.Method.Transfer) {
-            revert Errors.InvoiceNotStreamBased();
-        }
 
         // Effects: update the invoice status to `Paid` once the full payment amount has been successfully streamed
         uint128 streamedAmount =
@@ -271,7 +262,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             _invoices[id].status = Types.Status.Paid;
         }
 
-        // Interactions: withdraw from the stream
+        // Check, Effects, Interactions: withdraw from the stream
         withdrawStream({ streamType: invoice.payment.method, streamId: invoice.payment.streamId, to: invoice.recipient });
     }
 
