@@ -41,8 +41,11 @@ library Errors {
     /// @notice Thrown when the invoice ID references a null invoice
     error InvoiceNull();
 
-    /// @notice Thrown when `msg.sender` is not the creator (recipient) of the invoice
-    error InvoiceOwnerUnauthorized();
+    /// @notice Thrown when `msg.sender` attempts to withdraw from an invoice that is not stream-based
+    error InvoiceNotStreamBased();
+
+    /// @notice Thrown when `msg.sender` is not the invoice recipient
+    error OnlyInvoiceRecipient();
 
     /// @notice Thrown when the payment interval (endTime - startTime) is too short for the selected recurrence
     /// i.e. recurrence is set to weekly but interval is shorter than 1 week

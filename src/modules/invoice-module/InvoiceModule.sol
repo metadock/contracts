@@ -35,12 +35,14 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Initializes the {StreamManager} contract
+    /// @dev Initializes the {StreamManager} contract and first invoice ID
     constructor(
         ISablierV2LockupLinear _sablierLockupLinear,
         ISablierV2LockupTranched _sablierLockupTranched,
         address _brokerAdmin
-    ) StreamManager(_sablierLockupLinear, _sablierLockupTranched, _brokerAdmin) {}
+    ) StreamManager(_sablierLockupLinear, _sablierLockupTranched, _brokerAdmin) {
+        _nextInvoiceId = 1;
+    }
 
     /*//////////////////////////////////////////////////////////////////////////
                                       MODIFIERS
@@ -117,6 +119,8 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             });
 
             // Set the number of payments to zero if dealing with a tranched-based invoice
+            // The `_checkIntervalPayment` method is still called for a tranched-based invoice just
+            // to validate the interval and ensure it can support multiple payments based on the chosen recurrence
             if (invoice.payment.method == Types.Method.TranchedStream) numberOfPayments = 0;
         }
 
@@ -192,7 +196,9 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             // Check to see whether the invoice must be paid through a linear or tranched stream
             if (invoice.payment.method == Types.Method.LinearStream) {
                 streamId = _payByLinearStream(invoice);
-            } else streamId = _payByTranchedStream(invoice);
+            } else {
+                streamId = _payByTranchedStream(invoice);
+            }
 
             // Effects: update the status of the invoice to `Ongoing` and the stream ID
             // if dealing with a linear or tranched-based invoice
@@ -216,7 +222,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             revert Errors.InvoiceAlreadyCanceled();
         }
 
-        // Checks: the `msg.sender` is the creator if dealing with a transfer-based invoice
+        // Checks: `msg.sender` is the recipient if dealing with a transfer-based invoice
         // or a linear/tranched stream-based invoice which was not paid yet (not streaming)
         //
         // Notes:
@@ -224,7 +230,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
         // {SablierV2Lockup} `cancel` method
         if (invoice.payment.method == Types.Method.Transfer || invoice.status == Types.Status.Pending) {
             if (invoice.recipient != msg.sender) {
-                revert Errors.InvoiceOwnerUnauthorized();
+                revert Errors.OnlyInvoiceRecipient();
             }
         }
         // Effects: cancel the stream accordingly depending on its type
@@ -240,11 +246,37 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
                 cancelTranchedStream({ streamId: invoice.payment.streamId });
             }
         }
+
         // Effects: mark the invoice as canceled
         _invoices[id].status = Types.Status.Canceled;
 
         // Log the invoice cancelation
         emit InvoiceCanceled(id);
+    }
+
+    function withdrawInvoiceStream(uint256 id) external {
+        // Load the invoice from storage
+        Types.Invoice memory invoice = _invoices[id];
+
+        // Checks: `msg.sender` is the stream recipient
+        if (invoice.recipient != msg.sender) {
+            revert Errors.OnlyInvoiceRecipient();
+        }
+
+        // Checks: the payment method is either linear or tranched stream
+        if (invoice.payment.method == Types.Method.Transfer) {
+            revert Errors.InvoiceNotStreamBased();
+        }
+
+        // Effects: update the invoice status to `Paid` once the full payment amount has been successfully streamed
+        uint128 streamedAmount =
+            streamedAmountOf({ streamType: invoice.payment.method, streamId: invoice.payment.streamId });
+        if (streamedAmount == invoice.payment.amount) {
+            _invoices[id].status = Types.Status.Paid;
+        }
+
+        // Interactions: withdraw from the stream
+        withdrawStream({ streamType: invoice.payment.method, streamId: invoice.payment.streamId, to: invoice.recipient });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -274,7 +306,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
             }
 
             // Interactions: pay the recipient with native token (ETH)
-            (bool success, ) = payable(invoice.recipient).call{ value: invoice.payment.amount }("");
+            (bool success,) = payable(invoice.recipient).call{ value: invoice.payment.amount }("");
             if (!success) revert Errors.NativeTokenPaymentFailed();
         } else {
             // Interactions: pay the recipient with the ERC-20 token
@@ -299,10 +331,8 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
 
     /// @dev Create the tranched stream payment
     function _payByTranchedStream(Types.Invoice memory invoice) internal returns (uint256 streamId) {
-        uint40 numberOfTranches = Helpers.computeNumberOfPayments(
-            invoice.payment.recurrence,
-            invoice.endTime - invoice.startTime
-        );
+        uint40 numberOfTranches =
+            Helpers.computeNumberOfPayments(invoice.payment.recurrence, invoice.endTime - invoice.startTime);
 
         streamId = StreamManager.createTranchedStream({
             asset: IERC20(invoice.payment.asset),
