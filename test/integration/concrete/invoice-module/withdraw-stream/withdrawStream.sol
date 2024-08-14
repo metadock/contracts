@@ -24,8 +24,8 @@ contract WithdrawLinearStream_Integration_Concret_Test is WithdrawLinearStream_I
         // Pay the invoice first (status will be updated to `Ongoing`)
         invoiceModule.payInvoice{ value: invoices[invoiceId].payment.amount }({ id: invoiceId });
 
-        // Advance the timestamp by 3 weeks to simulate the withdrawal
-        vm.warp(block.timestamp + 3 weeks);
+        // Advance the timestamp by 5 weeks to simulate the withdrawal
+        vm.warp(block.timestamp + 5 weeks);
 
         // Store Eve's balance before withdrawing the USDT tokens
         uint256 balanceOfBefore = usdt.balanceOf(users.eve);
@@ -59,8 +59,8 @@ contract WithdrawLinearStream_Integration_Concret_Test is WithdrawLinearStream_I
         // Pay the invoice first (status will be updated to `Ongoing`)
         invoiceModule.payInvoice{ value: invoices[invoiceId].payment.amount }({ id: invoiceId });
 
-        // Advance the timestamp by 3 weeks to simulate the withdrawal
-        vm.warp(block.timestamp + 3 weeks);
+        // Advance the timestamp by 5 weeks to simulate the withdrawal
+        vm.warp(block.timestamp + 5 weeks);
 
         // Store Eve's balance before withdrawing the USDT tokens
         uint256 balanceOfBefore = usdt.balanceOf(users.eve);
