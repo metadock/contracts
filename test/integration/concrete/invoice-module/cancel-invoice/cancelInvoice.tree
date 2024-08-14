@@ -7,14 +7,14 @@ cancelInvoice.t.sol
     └── when the invoice status IS NOT Canceled
         ├── given the payment method is transfer
         │   ├── when the sender IS NOT the invoice recipient
-        │   │   └── it should revert with the {InvoiceOwnerUnauthorized}
+        │   │   └── it should revert with the {OnlyInvoiceRecipient}
         │   └── when the sender IS the invoice recipient
         │        ├── it should mark the invoice as Canceled
         │        └── it should emit an {InvoiceCanceled} event
         ├── given the payment method is linear stream-based
         │   ├── given the invoice status is Pending
         │   │   ├── when the sender IS NOT the invoice recipient
-        │   │   │   └── it should revert with the {InvoiceOwnerUnauthorized}
+        │   │   │   └── it should revert with the {OnlyInvoiceRecipient}
         │   │   └── when the sender IS the invoice recipient
         │   │       ├── it should mark the invoice as Canceled
         │   │       └── it should emit an {InvoiceCanceled} event
@@ -27,7 +27,7 @@ cancelInvoice.t.sol
         └── given the payment method is tranched stream-based
             ├── given the invoice status is Pending
             │   ├── when the sender IS NOT the invoice recipient
-            │   │   └── it should revert with the {InvoiceOwnerUnauthorized}
+            │   │   └── it should revert with the {OnlyInvoiceRecipient}
             │   └── when the sender IS the invoice recipient
             │       ├── it should mark the invoice as Canceled
             │       └── it should emit an {InvoiceCanceled} event

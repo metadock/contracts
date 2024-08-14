@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import { Types } from "./../../src/modules/invoice-module/libraries/Types.sol";
-import { Test } from "forge-std/Test.sol";
+import { Helpers as InvoiceHelpers } from "./../../src/modules/invoice-module/libraries/Helpers.sol";
 
 library Helpers {
     function createInvoiceDataType(address recipient) public view returns (Types.Invoice memory) {
@@ -34,5 +34,44 @@ library Helpers {
         } else if (recurrence == Types.Recurrence.Yearly) {
             numberOfPayments = interval / 48 weeks;
         }
+    }
+
+    /// @dev Checks if the fuzzed recurrence and payment method are valid;
+    /// Check {IInvoiceModule-createInvoice} for reference
+    function checkFuzzedPaymentMethod(
+        uint8 paymentMethod,
+        uint8 recurrence,
+        uint40 startTime,
+        uint40 endTime
+    ) internal pure returns (bool valid, uint40 numberOfPayments) {
+        if (paymentMethod == uint8(Types.Method.Transfer) && recurrence == uint8(Types.Recurrence.OneOff)) {
+            numberOfPayments = 1;
+        } else if (paymentMethod != uint8(Types.Method.LinearStream)) {
+            numberOfPayments = InvoiceHelpers.computeNumberOfPayments({
+                recurrence: Types.Recurrence(recurrence),
+                interval: endTime - startTime
+            });
+
+            // Check if the interval is too short for the fuzzed recurrence
+            // due to zero payments that must be done
+            if (numberOfPayments == 0) return (false, 0);
+
+            if (paymentMethod == uint8(Types.Method.TranchedStream)) {
+                // Check for the maximum number of tranched steps in a Tranched Stream
+                if (numberOfPayments > 500) return (false, 0);
+
+                numberOfPayments = 0;
+            }
+        }
+
+        // Break fuzz test if payment method is tranched stream and recurrence set to one-off
+        // as a tranched stream recurrence must be Weekly, Monthly or Yearly
+        if (paymentMethod == uint8(Types.Method.TranchedStream)) {
+            if (recurrence == uint8(Types.Recurrence.OneOff)) {
+                return (false, 0);
+            }
+        }
+
+        return (true, numberOfPayments);
     }
 }

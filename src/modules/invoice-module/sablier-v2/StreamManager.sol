@@ -8,7 +8,7 @@ import { LockupLinear, LockupTranched } from "@sablier/v2-core/src/types/DataTyp
 import { Broker, LockupLinear } from "@sablier/v2-core/src/types/DataTypes.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ud60x18, UD60x18 } from "@prb/math/src/UD60x18.sol";
+import { ud60x18, UD60x18, ud, intoUint128 } from "@prb/math/src/UD60x18.sol";
 
 import { IStreamManager } from "./interfaces/IStreamManager.sol";
 import { Errors } from "./../libraries/Errors.sol";
@@ -125,13 +125,29 @@ abstract contract StreamManager is IStreamManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IStreamManager
-    function withdrawLinearStream(uint256 streamId, address to) public {
-        _withdrawStream({ sablier: LOCKUP_LINEAR, streamId: streamId, to: to });
+    function withdrawStream(
+        Types.Method streamType,
+        uint256 streamId,
+        address to
+    ) public returns (uint128 withdrawnAmount) {
+        // Set the according {ISablierV2Lockup} based on the stream type
+        ISablierV2Lockup sablier = _getISablierV2Lockup(streamType);
+
+        // Withdraw the maximum withdrawable amount
+        withdrawnAmount = _withdrawStream(sablier, streamId, to);
     }
 
     /// @inheritdoc IStreamManager
-    function withdrawTranchedStream(uint256 streamId, address to) public {
-        _withdrawStream({ sablier: LOCKUP_TRANCHED, streamId: streamId, to: to });
+    function withdrawableAmountOf(
+        Types.Method streamType,
+        uint256 streamId
+    ) public view returns (uint128 withdrawableAmount) {
+        withdrawableAmount = _getISablierV2Lockup(streamType).withdrawableAmountOf(streamId);
+    }
+
+    /// @inheritdoc IStreamManager
+    function streamedAmountOf(Types.Method streamType, uint256 streamId) public view returns (uint128 streamedAmount) {
+        streamedAmount = _getISablierV2Lockup(streamType).streamedAmountOf(streamId);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -139,15 +155,12 @@ abstract contract StreamManager is IStreamManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IStreamManager
-    function cancelLinearStream(uint256 streamId) public {
-        // Checks, Effect, Interactions
-        _cancelStream({ sablier: LOCKUP_LINEAR, streamId: streamId });
-    }
+    function cancelStream(Types.Method streamType, uint256 streamId) public {
+        // Set the according {ISablierV2Lockup} based on the stream type
+        ISablierV2Lockup sablier = _getISablierV2Lockup(streamType);
 
-    /// @inheritdoc IStreamManager
-    function cancelTranchedStream(uint256 streamId) public {
         // Checks, Effect, Interactions
-        _cancelStream({ sablier: LOCKUP_TRANCHED, streamId: streamId });
+        _cancelStream(sablier, streamId);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -219,22 +232,33 @@ abstract contract StreamManager is IStreamManager {
         params.startTime = startTime; // The timestamp when to start streaming
 
         // Calculate the duration of each tranche based on the payment recurrence
-        uint40 durationPerTranche = _computeDurationPerTrache(recurrence);
+        uint40 durationPerTranche = _getDurationPerTrache(recurrence);
+
+        // Calculate the broker fee amount
+        uint128 brokerFeeAmount = ud(totalAmount).mul(brokerFee).intoUint128();
+
+        // Calculate the remaining amount to be streamed after substracting the broker fee
+        uint128 deposit = totalAmount - brokerFeeAmount;
 
         // Calculate the amount that must be unlocked with each tranche
-        uint128 amountPerTranche = totalAmount / numberOfTranches;
+        uint128 amountPerTranche = deposit / numberOfTranches;
+        uint128 estimatedDepositAmount;
 
         // Create the tranches array
         params.tranches = new LockupTranched.Tranche[](numberOfTranches);
         for (uint256 i; i < numberOfTranches; ++i) {
-            params.tranches[i] = LockupTranched.Tranche({
-                amount: amountPerTranche,
-                timestamp: startTime + durationPerTranche
-            });
+            params.tranches[i] =
+                LockupTranched.Tranche({ amount: amountPerTranche, timestamp: startTime + durationPerTranche });
 
             // Jump to the next tranche by adding the duration per tranche timestamp to the start time
             startTime += durationPerTranche;
+
+            // Sum the individual tranche amount to get the estimated deposit amount
+            estimatedDepositAmount += params.tranches[i].amount;
         }
+
+        // Account for rounding errors by adjusting the last tranche
+        params.tranches[numberOfTranches - 1].amount += deposit - estimatedDepositAmount;
 
         // Optional parameter for charging a fee
         params.broker = Broker({ account: brokerAdmin, fee: brokerFee });
@@ -243,9 +267,13 @@ abstract contract StreamManager is IStreamManager {
         streamId = LOCKUP_TRANCHED.createWithTimestamps(params);
     }
 
-    /// @dev Withdraws from either a linear or tranched stream
-    function _withdrawStream(ISablierV2Lockup sablier, uint256 streamId, address to) internal {
-        sablier.withdrawMax(streamId, to);
+    /// @dev Withdraws the maximum withdrawable amount from either a linear or tranched stream
+    function _withdrawStream(
+        ISablierV2Lockup sablier,
+        uint256 streamId,
+        address to
+    ) internal returns (uint128 withdrawnAmount) {
+        return sablier.withdrawMax(streamId, to);
     }
 
     /// @dev Cancels the `streamId` stream
@@ -268,10 +296,19 @@ abstract contract StreamManager is IStreamManager {
         asset.approve(spender, amount);
     }
 
-    /// @dev Calculates the duration of each tranches from a tranched stream based on a recurrence
-    function _computeDurationPerTrache(Types.Recurrence recurrence) internal pure returns (uint40 duration) {
+    /// @dev Retrieves the duration of each tranche from a tranched stream based on a recurrence
+    function _getDurationPerTrache(Types.Recurrence recurrence) internal pure returns (uint40 duration) {
         if (recurrence == Types.Recurrence.Weekly) duration = 1 weeks;
         else if (recurrence == Types.Recurrence.Monthly) duration = 4 weeks;
         else if (recurrence == Types.Recurrence.Yearly) duration = 48 weeks;
+    }
+
+    /// @dev Retrieves the according {ISablierV2Lockup} contract based on the stream type
+    function _getISablierV2Lockup(Types.Method streamType) internal view returns (ISablierV2Lockup sablier) {
+        if (streamType == Types.Method.LinearStream) {
+            sablier = LOCKUP_LINEAR;
+        } else {
+            sablier = LOCKUP_TRANCHED;
+        }
     }
 }

@@ -11,6 +11,7 @@ import { LockupLinear, LockupTranched } from "@sablier/v2-core/src/types/DataTyp
 contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Test {
     function setUp() public virtual override {
         PayInvoice_Integration_Shared_Test.setUp();
+        createMockInvoices();
     }
 
     function test_RevertWhen_InvoiceNull() external {
@@ -23,7 +24,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
 
     function test_RevertWhen_InvoiceAlreadyPaid() external whenInvoiceNotNull {
         // Set the one-off USDT transfer invoice as current one
-        uint256 invoiceId = 0;
+        uint256 invoiceId = 1;
 
         // Make Bob the payer for the default invoice
         vm.startPrank({ msgSender: users.bob });
@@ -43,7 +44,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
 
     function test_RevertWhen_InvoiceCanceled() external whenInvoiceNotNull whenInvoiceNotAlreadyPaid {
         // Set the one-off USDT transfer invoice as current one
-        uint256 invoiceId = 0;
+        uint256 invoiceId = 1;
 
         // Make Eve the caller in this test suite as she's the owner of the {Container} contract
         vm.startPrank({ msgSender: users.eve });
@@ -70,7 +71,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         givenPaymentAmountInNativeToken
     {
         // Set the one-off ETH transfer invoice as current one
-        uint256 invoiceId = 1;
+        uint256 invoiceId = 2;
 
         // Make Bob the payer for the default invoice
         vm.startPrank({ msgSender: users.bob });
@@ -78,8 +79,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         // Expect the call to be reverted with the {PaymentAmountLessThanInvoiceValue} error
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.PaymentAmountLessThanInvoiceValue.selector,
-                invoices[invoiceId].payment.amount
+                Errors.PaymentAmountLessThanInvoiceValue.selector, invoices[invoiceId].payment.amount
             )
         );
 
@@ -97,10 +97,8 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         whenPaymentAmountEqualToInvoiceValue
     {
         // Create a mock invoice with a one-off ETH transfer and set {MockBadReceiver} as the recipient
-        Types.Invoice memory invoice = createInvoiceWithOneOffTransfer({
-            asset: address(0),
-            recipient: address(mockBadReceiver)
-        });
+        Types.Invoice memory invoice =
+            createInvoiceWithOneOffTransfer({ asset: address(0), recipient: address(mockBadReceiver) });
         executeCreateInvoice({ invoice: invoice, user: users.eve });
 
         // Make {MockBadReceiver} the payer for this invoice
@@ -110,7 +108,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         vm.expectRevert(Errors.NativeTokenPaymentFailed.selector);
 
         // Run the test
-        invoiceModule.payInvoice{ value: invoice.payment.amount }({ id: 5 });
+        invoiceModule.payInvoice{ value: invoice.payment.amount }({ id: 6 });
     }
 
     function test_PayInvoice_PaymentMethodTransfer_NativeToken_OneOff()
@@ -124,7 +122,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         whenNativeTokenPaymentSucceeds
     {
         // Set the one-off ETH transfer invoice as current one
-        uint256 invoiceId = 1;
+        uint256 invoiceId = 2;
 
         // Make Bob the payer for the default invoice
         vm.startPrank({ msgSender: users.bob });
@@ -175,7 +173,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         whenPaymentAmountEqualToInvoiceValue
     {
         // Set the recurring USDT transfer invoice as current one
-        uint256 invoiceId = 2;
+        uint256 invoiceId = 3;
 
         // Make Bob the payer for the default invoice
         vm.startPrank({ msgSender: users.bob });
@@ -214,8 +212,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         // Assert the balances of payer and recipient
         assertEq(usdt.balanceOf(users.bob), balanceOfBobBefore - invoices[invoiceId].payment.amount);
         assertEq(
-            usdt.balanceOf(invoices[invoiceId].recipient),
-            balanceOfRecipientBefore + invoices[invoiceId].payment.amount
+            usdt.balanceOf(invoices[invoiceId].recipient), balanceOfRecipientBefore + invoices[invoiceId].payment.amount
         );
     }
 
@@ -229,7 +226,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         whenPaymentAmountEqualToInvoiceValue
     {
         // Set the linear USDT stream-based invoice as current one
-        uint256 invoiceId = 3;
+        uint256 invoiceId = 4;
 
         // Make Bob the payer for the default invoice
         vm.startPrank({ msgSender: users.bob });
@@ -281,7 +278,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         whenPaymentAmountEqualToInvoiceValue
     {
         // Set the tranched USDT stream-based invoice as current one
-        uint256 invoiceId = 4;
+        uint256 invoiceId = 5;
 
         // Make Bob the payer for the default invoice
         vm.startPrank({ msgSender: users.bob });

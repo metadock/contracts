@@ -64,19 +64,14 @@ interface IDockRegistry {
     /// - `msg.sender` MUST be the dock owner if a new container is to be attached to an existing dock
     ///
     /// @param dockId The ID of the dock to attach the {Container} to
-    /// @param owner The address of the {Container} owner
     /// @param initialModules Array of initially enabled modules
-    function createContainer(
-        uint256 dockId,
-        address owner,
-        address[] memory initialModules
-    ) external returns (address container);
+    function createContainer(uint256 dockId, address[] memory initialModules) external returns (address container);
 
     /// @notice Transfers the ownership of the `container` container
     ///
     /// Requirements:
     /// - reverts if `msg.sender` is not the current {Container} owner
-    /// -  revert if `newOwner` is the zero-address
+    /// - reverts if `newOwner` is the zero-address
     ///
     /// @param container The address of the {Container} instance whose ownership is to be transferred
     /// @param newOwner The address of the new owner

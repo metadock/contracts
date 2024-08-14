@@ -10,6 +10,7 @@ abstract contract WithdrawTranchedStream_Integration_Shared_Test is
 {
     function setUp() public virtual override(Integration_Test, PayInvoice_Integration_Shared_Test) {
         PayInvoice_Integration_Shared_Test.setUp();
+        createMockInvoices();
     }
 
     modifier givenInvoiceStatusOngoing() {

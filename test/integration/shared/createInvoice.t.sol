@@ -138,14 +138,38 @@ abstract contract CreateInvoice_Integration_Shared_Test is Integration_Test {
         });
     }
 
+    /// @dev Creates an invoice with fuzzed parameters
+    function createFuzzedInvoice(
+        Types.Method method,
+        Types.Recurrence recurrence,
+        address recipient,
+        uint40 startTime,
+        uint40 endTime,
+        uint128 amount
+    ) internal view returns (Types.Invoice memory invoice) {
+        invoice.recipient = recipient;
+        invoice.status = Types.Status.Pending;
+
+        invoice.startTime = startTime;
+        invoice.endTime = endTime;
+
+        invoice.payment = Types.Payment({
+            method: method,
+            recurrence: recurrence,
+            paymentsLeft: 0,
+            asset: address(usdt),
+            amount: amount,
+            streamId: 0
+        });
+    }
+
     function executeCreateInvoice(Types.Invoice memory invoice, address user) public {
         // Make the `user` account the caller who must be the owner of the {Container} contract
         vm.startPrank({ msgSender: user });
 
         // Create the invoice
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))",
-            invoice
+            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
         container.execute({ module: address(invoiceModule), value: 0, data: data });
 

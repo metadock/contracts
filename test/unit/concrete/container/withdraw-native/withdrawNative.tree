@@ -5,5 +5,8 @@ withdrawNative.t.sol
     ├── when container native token (ETH) balance IS INSUFFICIENT to support the withdrawal
     │   └── it should revert with the {InsufficientERC20ToWithdraw} error
     └── when container native token (ETH) balance IS SUFFICIENT to support the withdrawal
-        ├── it should transfer the native tokens to the caller
-        └── it should emit an {AssetWithdrawn} event
+        ├── when native token transfer fails
+        │   └── it should revert with the {NativeWithdrawFailed} error
+        └── when native token transfer succeeds
+            ├── it should transfer the native tokens to the caller
+            └── it should emit an {AssetWithdrawn} event

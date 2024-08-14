@@ -36,8 +36,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))",
-            invoice
+            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
         // Expect the call to revert with the {ContainerUnsupportedInterface} error
@@ -59,8 +58,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))",
-            invoice
+            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
         // Expect the call to revert with the {ZeroPaymentAmount} error
@@ -88,8 +86,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))",
-            invoice
+            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
         // Expect the call to revert with the {StartTimeGreaterThanEndTime} error
@@ -113,7 +110,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
         invoice = createInvoiceWithOneOffTransfer({ asset: address(usdt), recipient: users.eve });
 
         // Set the block.timestamp to 1641070800
-        vm.warp(1641070800);
+        vm.warp(1_641_070_800);
 
         // Set the start time to be the lower than the end time so the 'start time lower than end time' passes
         // but set the end time in the past to get the {EndTimeInThePast} revert
@@ -122,8 +119,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))",
-            invoice
+            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
         // Expect the call to revert with the {EndTimeInThePast} error
@@ -151,14 +147,13 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))",
-            invoice
+            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
         // Expect the module call to emit an {InvoiceCreated} event
         vm.expectEmit();
         emit Events.InvoiceCreated({
-            id: 0,
+            id: 1,
             recipient: users.eve,
             status: Types.Status.Pending,
             startTime: invoice.startTime,
@@ -174,7 +169,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
         container.execute({ module: address(invoiceModule), value: 0, data: data });
 
         // Assert the actual and expected invoice state
-        Types.Invoice memory actualInvoice = invoiceModule.getInvoice({ id: 0 });
+        Types.Invoice memory actualInvoice = invoiceModule.getInvoice({ id: 1 });
         assertEq(actualInvoice.recipient, users.eve);
         assertEq(uint8(actualInvoice.status), uint8(Types.Status.Pending));
         assertEq(actualInvoice.startTime, invoice.startTime);
@@ -208,8 +203,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))",
-            invoice
+            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
         // Expect the call to revert with the {PaymentIntervalTooShortForSelectedRecurrence} error
@@ -237,14 +231,13 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))",
-            invoice
+            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
         // Expect the module call to emit an {InvoiceCreated} event
         vm.expectEmit();
         emit Events.InvoiceCreated({
-            id: 0,
+            id: 1,
             recipient: users.eve,
             status: Types.Status.Pending,
             startTime: invoice.startTime,
@@ -260,7 +253,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
         container.execute({ module: address(invoiceModule), value: 0, data: data });
 
         // Assert the actual and expected invoice state
-        Types.Invoice memory actualInvoice = invoiceModule.getInvoice({ id: 0 });
+        Types.Invoice memory actualInvoice = invoiceModule.getInvoice({ id: 1 });
         assertEq(actualInvoice.recipient, users.eve);
         assertEq(uint8(actualInvoice.status), uint8(Types.Status.Pending));
         assertEq(actualInvoice.startTime, invoice.startTime);
@@ -296,8 +289,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))",
-            invoice
+            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
         // Run the test
@@ -328,8 +320,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))",
-            invoice
+            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
         // Run the test
@@ -361,8 +352,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))",
-            invoice
+            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
         // Run the test
@@ -387,14 +377,13 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))",
-            invoice
+            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
         // Expect the module call to emit an {InvoiceCreated} event
         vm.expectEmit();
         emit Events.InvoiceCreated({
-            id: 0,
+            id: 1,
             recipient: users.eve,
             status: Types.Status.Pending,
             startTime: invoice.startTime,
@@ -410,7 +399,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
         container.execute({ module: address(invoiceModule), value: 0, data: data });
 
         // Assert the actual and expected invoice state
-        Types.Invoice memory actualInvoice = invoiceModule.getInvoice({ id: 0 });
+        Types.Invoice memory actualInvoice = invoiceModule.getInvoice({ id: 1 });
         assertEq(actualInvoice.recipient, users.eve);
         assertEq(uint8(actualInvoice.status), uint8(Types.Status.Pending));
         assertEq(actualInvoice.startTime, invoice.startTime);
@@ -446,8 +435,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))",
-            invoice
+            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
         // Run the test
@@ -472,14 +460,13 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
 
         // Create the calldata for the Invoice Module execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))",
-            invoice
+            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
         // Expect the module call to emit an {InvoiceCreated} event
         vm.expectEmit();
         emit Events.InvoiceCreated({
-            id: 0,
+            id: 1,
             recipient: users.eve,
             status: Types.Status.Pending,
             startTime: invoice.startTime,
@@ -495,7 +482,7 @@ contract CreateInvoice_Integration_Concret_Test is CreateInvoice_Integration_Sha
         container.execute({ module: address(invoiceModule), value: 0, data: data });
 
         // Assert the actual and expected invoice state
-        Types.Invoice memory actualInvoice = invoiceModule.getInvoice({ id: 0 });
+        Types.Invoice memory actualInvoice = invoiceModule.getInvoice({ id: 1 });
         assertEq(actualInvoice.recipient, users.eve);
         assertEq(uint8(actualInvoice.status), uint8(Types.Status.Pending));
         assertEq(actualInvoice.startTime, invoice.startTime);
