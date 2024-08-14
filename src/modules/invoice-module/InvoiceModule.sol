@@ -240,11 +240,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager {
         // - A linear or tranched stream MUST be canceled by calling the `cancel` method on the according
         // {ISablierV2Lockup} contract
         else if (invoice.status == Types.Status.Ongoing) {
-            if (invoice.payment.method == Types.Method.LinearStream) {
-                cancelLinearStream({ streamId: invoice.payment.streamId });
-            } else if (invoice.payment.method == Types.Method.TranchedStream) {
-                cancelTranchedStream({ streamId: invoice.payment.streamId });
-            }
+            cancelStream({ streamType: invoice.payment.method, streamId: invoice.payment.streamId });
         }
 
         // Effects: mark the invoice as canceled

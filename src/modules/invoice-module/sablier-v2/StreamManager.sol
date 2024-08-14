@@ -150,15 +150,12 @@ abstract contract StreamManager is IStreamManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IStreamManager
-    function cancelLinearStream(uint256 streamId) public {
-        // Checks, Effect, Interactions
-        _cancelStream({ sablier: LOCKUP_LINEAR, streamId: streamId });
-    }
+    function cancelStream(Types.Method streamType, uint256 streamId) public {
+        // Set the according {ISablierV2Lockup} based on the stream type
+        ISablierV2Lockup sablier = _getISablierV2Lockup(streamType);
 
-    /// @inheritdoc IStreamManager
-    function cancelTranchedStream(uint256 streamId) public {
         // Checks, Effect, Interactions
-        _cancelStream({ sablier: LOCKUP_TRANCHED, streamId: streamId });
+        _cancelStream(sablier, streamId);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -301,7 +298,7 @@ abstract contract StreamManager is IStreamManager {
         else if (recurrence == Types.Recurrence.Yearly) duration = 48 weeks;
     }
 
-    /// @dev Get the according {ISablierV2Lockup} contract based on the stream type
+    /// @dev Retrieves the according {ISablierV2Lockup} contract based on the stream type
     function _getISablierV2Lockup(Types.Method streamType) internal view returns (ISablierV2Lockup sablier) {
         if (streamType == Types.Method.LinearStream) {
             sablier = LOCKUP_LINEAR;
