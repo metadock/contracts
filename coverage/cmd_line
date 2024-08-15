@@ -1,1 +1,0 @@
-genhtml formatted-lcov.info --rc lcov_branch_coverage=1 --output-directory coverage --ignore-errors deprecated,inconsistent,corrupt
