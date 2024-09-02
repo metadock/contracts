@@ -1,2 +1,2 @@
 receive.t.sol
-└── it should emit an {NativeDeposited} event
+└── it should emit an {NativeReceived} event

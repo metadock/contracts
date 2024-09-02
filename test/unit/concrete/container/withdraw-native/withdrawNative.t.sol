@@ -85,7 +85,7 @@ contract WithdrawNative_Unit_Concrete_Test is Container_Unit_Concrete_Test {
 
         // Expect the {AssetWithdrawn} event to be emitted
         vm.expectEmit();
-        emit Events.AssetWithdrawn({ sender: users.eve, asset: address(0x0), amount: ethToWithdraw });
+        emit Events.AssetWithdrawn({ to: users.eve, asset: address(0x0), amount: ethToWithdraw });
 
         // Run the test
         container.withdrawNative({ amount: ethToWithdraw });

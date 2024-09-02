@@ -51,7 +51,7 @@ contract WithdrawERC20_Unit_Concrete_Test is Container_Unit_Concrete_Test {
 
         // Expect the {AssetWithdrawn} event to be emitted
         vm.expectEmit();
-        emit Events.AssetWithdrawn({ sender: users.eve, asset: address(usdt), amount: 10e6 });
+        emit Events.AssetWithdrawn({ to: users.eve, asset: address(usdt), amount: 10e6 });
 
         // Run the test
         container.withdrawERC20({ asset: IERC20(address(usdt)), amount: 10e6 });

@@ -13,12 +13,12 @@ contract Receive_Unit_Concrete_Test is Container_Unit_Concrete_Test {
         // Make Bob the caller for this test suite
         vm.startPrank({ msgSender: users.bob });
 
-        // Expect the {NativeDeposited} event to be emitted upon ETH deposit
+        // Expect the {NativeReceived} event to be emitted upon ETH deposit
         vm.expectEmit();
-        emit Events.NativeDeposited({ sender: users.bob, amount: 1 ether });
+        emit Events.NativeReceived({ from: users.bob, amount: 1 ether });
 
         // Run the test
-        (bool success, ) = address(container).call{ value: 1 ether }("");
+        (bool success,) = address(container).call{ value: 1 ether }("");
         if (!success) revert();
 
         // Assert the {Container} contract balance
