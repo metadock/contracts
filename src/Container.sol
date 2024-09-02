@@ -6,6 +6,7 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import { ExcessivelySafeCall } from "@nomad-xyz/excessively-safe-call/src/ExcessivelySafeCall.sol";
 
 import { IContainer } from "./interfaces/IContainer.sol";
@@ -146,5 +147,35 @@ contract Container is IContainer, ModuleManager {
         emit ERC721Received(from, tokenId);
 
         return this.onERC721Received.selector;
+    }
+
+    /// @inheritdoc IERC1155Receiver
+    function onERC1155Received(
+        address,
+        address from,
+        uint256 id,
+        uint256 value,
+        bytes calldata
+    ) external override returns (bytes4) {
+        // Log the successful ERC-1155 token receipt
+        emit ERC1155Received(from, id, value);
+
+        return this.onERC1155Received.selector;
+    }
+
+    /// @inheritdoc IERC1155Receiver
+    function onERC1155BatchReceived(
+        address,
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata values,
+        bytes calldata
+    ) external override returns (bytes4) {
+        for (uint256 i; i < ids.length; ++i) {
+            // Log the successful ERC-1155 token receipt
+            emit ERC1155Received(from, ids[i], values[i]);
+        }
+
+        return this.onERC1155BatchReceived.selector;
     }
 }

@@ -5,11 +5,12 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 
 /// @title IContainer
 /// @notice Contract that provides functionalities to store native token (ETH) value and any ERC-20 tokens, allowing
 /// external modules to be executed by extending its core functionalities
-interface IContainer is IERC165, IERC721Receiver {
+interface IContainer is IERC165, IERC721Receiver, IERC1155Receiver {
     /*//////////////////////////////////////////////////////////////////////////
                                        EVENTS
     //////////////////////////////////////////////////////////////////////////*/
@@ -24,6 +25,12 @@ interface IContainer is IERC165, IERC721Receiver {
     /// @param tokenId The ID of the received token
     event ERC721Received(address indexed from, uint256 indexed tokenId);
 
+    /// @notice Emitted when an ERC-1155 token is received by the container
+    /// @param from The address of the depositor
+    /// @param id The ID of the received token
+    /// @param value The amount of tokens received
+    event ERC1155Received(address indexed from, uint256 indexed id, uint256 value);
+
     /// @notice Emitted when an `amount` amount of `asset` ERC-20 asset or native ETH is withdrawn from the container
     /// @param to The address to which the tokens were transferred
     /// @param asset The address of the ERC-20 token or zero-address for native ETH
@@ -31,10 +38,16 @@ interface IContainer is IERC165, IERC721Receiver {
     event AssetWithdrawn(address indexed to, address indexed asset, uint256 amount);
 
     /// @notice Emitted when an ERC-721 token is withdrawn from the container
-    /// @param to The address that received the token
+    /// @param to The address to which the token was transferred
     /// @param collection The address of the ERC-721 collection
     /// @param tokenId The ID of the token
     event ERC721Withdrawn(address indexed to, address indexed collection, uint256 tokenId);
+
+    /// @notice Emitted when an ERC-1155 token is withdrawn from the container
+    /// @param to The address to which the tokens were transferred
+    /// @param id The ID of the token
+    /// @param value The amount of the tokens withdrawn
+    event ERC1155Withdrawn(address indexed to, address indexed collection, uint256 id, uint256 value);
 
     /// @notice Emitted when a module execution is successful
     /// @param module The address of the module
