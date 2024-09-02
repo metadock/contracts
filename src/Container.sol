@@ -2,8 +2,10 @@
 pragma solidity ^0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import { ExcessivelySafeCall } from "@nomad-xyz/excessively-safe-call/src/ExcessivelySafeCall.sol";
 
 import { IContainer } from "./interfaces/IContainer.sol";
@@ -80,7 +82,18 @@ contract Container is IContainer, ModuleManager {
         asset.safeTransfer({ to: msg.sender, value: amount });
 
         // Log the successful ERC-20 token withdrawal
-        emit AssetWithdrawn({ sender: msg.sender, asset: address(asset), amount: amount });
+        emit AssetWithdrawn({ to: msg.sender, asset: address(asset), amount: amount });
+    }
+
+    /// @inheritdoc IContainer
+    function withdrawERC721(IERC721 collection, uint256 tokenId) public onlyOwner {
+        // Interactions: withdraw by transferring the token to the sender
+        // We're using `safeTransferFrom` as the owner can be an ERC-4337 smart account
+        // therefore the `onERC721Received` hook must be implemented
+        collection.safeTransferFrom(address(this), msg.sender, tokenId);
+
+        // Log the successful ERC-721 token withdrawal
+        emit ERC721Withdrawn({ to: msg.sender, collection: address(collection), tokenId: tokenId });
     }
 
     /// @inheritdoc IContainer
@@ -89,12 +102,12 @@ contract Container is IContainer, ModuleManager {
         if (amount > address(this).balance) revert Errors.InsufficientNativeToWithdraw();
 
         // Interactions: withdraw by transferring the amount to the sender
-        (bool success,) = payable(msg.sender).call{ value: amount }("");
+        (bool success,) = msg.sender.call{ value: amount }("");
         // Revert if the call failed
         if (!success) revert Errors.NativeWithdrawFailed();
 
         // Log the successful native token withdrawal
-        emit AssetWithdrawn({ sender: msg.sender, asset: address(0), amount: amount });
+        emit AssetWithdrawn({ to: msg.sender, asset: address(0), amount: amount });
     }
 
     /// @inheritdoc IModuleManager
@@ -110,7 +123,7 @@ contract Container is IContainer, ModuleManager {
     /// @dev Allow container to receive native token (ETH)
     receive() external payable {
         // Log the successful native token deposit
-        emit NativeDeposited({ sender: msg.sender, amount: msg.value });
+        emit NativeReceived({ from: msg.sender, amount: msg.value });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -120,5 +133,18 @@ contract Container is IContainer, ModuleManager {
     /// @inheritdoc IERC165
     function supportsInterface(bytes4 interfaceId) public pure override returns (bool) {
         return interfaceId == type(IContainer).interfaceId || interfaceId == type(IERC165).interfaceId;
+    }
+
+    /// @inheritdoc IERC721Receiver
+    function onERC721Received(
+        address,
+        address from,
+        uint256 tokenId,
+        bytes calldata
+    ) external override returns (bytes4) {
+        // Log the successful ERC-721 token receipt
+        emit ERC721Received(from, tokenId);
+
+        return this.onERC721Received.selector;
     }
 }
