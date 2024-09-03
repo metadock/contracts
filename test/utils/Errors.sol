@@ -33,6 +33,9 @@ library Errors {
     /// @notice Thrown when the deposited ERC-20 token amount is zero
     error InvalidAssetZeroAmount();
 
+    /// @notice Thrown when the ERC-721 token ID does not exist
+    error ERC721NonexistentToken(uint256 tokenId);
+
     /*//////////////////////////////////////////////////////////////////////////
                                   MODULE-MANAGER
     //////////////////////////////////////////////////////////////////////////*/
