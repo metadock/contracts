@@ -77,9 +77,9 @@ abstract contract Events {
 
     /// @notice Emitted when an ERC-1155 token is withdrawn from the container
     /// @param to The address to which the tokens were transferred
-    /// @param id The ID of the token
-    /// @param value The amount of the tokens withdrawn
-    event ERC1155Withdrawn(address indexed to, address indexed collection, uint256 id, uint256 value);
+    /// @param ids The IDs of the tokens
+    /// @param amounts The amounts of the tokens
+    event ERC1155Withdrawn(address indexed to, address indexed collection, uint256[] ids, uint256[] amounts);
 
     /// @notice Emitted when a module execution is successful
     /// @param module The address of the module
