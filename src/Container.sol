@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
@@ -88,13 +89,31 @@ contract Container is IContainer, ModuleManager {
 
     /// @inheritdoc IContainer
     function withdrawERC721(IERC721 collection, uint256 tokenId) public onlyOwner {
-        // Interactions: withdraw by transferring the token to the sender
-        // We're using `safeTransferFrom` as the owner can be an ERC-4337 smart account
+        // Checks, Effects, Interactions: withdraw by transferring the token to the container owner
+        // Notes:
+        // - we're using `safeTransferFrom` as the owner can be an ERC-4337 smart account
         // therefore the `onERC721Received` hook must be implemented
         collection.safeTransferFrom(address(this), msg.sender, tokenId);
 
         // Log the successful ERC-721 token withdrawal
         emit ERC721Withdrawn({ to: msg.sender, collection: address(collection), tokenId: tokenId });
+    }
+
+    /// @inheritdoc IContainer
+    function withdrawERC1155(IERC1155 collection, uint256[] memory ids, uint256[] memory amounts) public onlyOwner {
+        // Checks, Effects, Interactions: withdraw by transferring the tokens to the container owner
+        // Notes:
+        // - we're using `safeTransferFrom` as the owner can be an ERC-4337 smart account
+        // therefore the `onERC1155Received` hook must be implemented
+        // - depending on the length of the `ids` array, we're using `safeBatchTransferFrom` or `safeTransferFrom`
+        if (ids.length > 1) {
+            collection.safeBatchTransferFrom({ from: address(this), to: msg.sender, ids: ids, values: amounts, data: "" });
+        } else {
+            collection.safeTransferFrom({ from: address(this), to: msg.sender, id: ids[0], value: amounts[0], data: "" });
+        }
+
+        // Log the successful ERC-1155 token withdrawal
+        emit ERC1155Withdrawn(msg.sender, address(collection), ids, amounts);
     }
 
     /// @inheritdoc IContainer

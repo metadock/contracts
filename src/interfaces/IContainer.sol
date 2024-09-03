@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
@@ -43,11 +44,12 @@ interface IContainer is IERC165, IERC721Receiver, IERC1155Receiver {
     /// @param tokenId The ID of the token
     event ERC721Withdrawn(address indexed to, address indexed collection, uint256 tokenId);
 
-    /// @notice Emitted when an ERC-1155 token is withdrawn from the container
+    /// @notice Emitted when a `value` amount of ERC-1155 `id` tokens are withdrawn from the container
     /// @param to The address to which the tokens were transferred
-    /// @param id The ID of the token
-    /// @param value The amount of the tokens withdrawn
-    event ERC1155Withdrawn(address indexed to, address indexed collection, uint256 id, uint256 value);
+    /// @param collection The address of the ERC-1155 collection
+    /// @param ids The IDs of the tokens
+    /// @param values The amounts of the token types withdrawn
+    event ERC1155Withdrawn(address indexed to, address indexed collection, uint256[] ids, uint256[] values);
 
     /// @notice Emitted when a module execution is successful
     /// @param module The address of the module
@@ -82,6 +84,16 @@ interface IContainer is IERC165, IERC721Receiver, IERC1155Receiver {
     /// @param collection The address of the ERC-721 collection
     /// @param tokenId The ID of the token to withdraw
     function withdrawERC721(IERC721 collection, uint256 tokenId) external;
+
+    /// @notice Withdraws an `amount` amount of ERC-1155 `id` token from the container
+    ///
+    /// Requirements:
+    /// - `msg.sender` must be the owner of the container
+    ///
+    /// @param collection The address of the ERC-1155 collection
+    /// @param ids The IDs of tokens to withdraw
+    /// @param amounts The amounts of tokens to withdraw
+    function withdrawERC1155(IERC1155 collection, uint256[] memory ids, uint256[] memory amounts) external;
 
     /// @notice Withdraws an `amount` amount of native token (ETH) from the container
     ///
