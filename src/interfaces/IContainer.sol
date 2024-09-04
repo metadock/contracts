@@ -67,7 +67,7 @@ interface IContainer is IERC165, IERC721Receiver, IERC1155Receiver {
     /// @param data The ABI-encode definition of the method (+inputs) to call
     function execute(address module, uint256 value, bytes memory data) external returns (bool success);
 
-    /// @notice Withdraws an `amount` amount of `asset` ERC-20 token from the container
+    /// @notice Withdraws an `amount` amount of `asset` ERC-20 token
     ///
     /// Requirements:
     /// - `msg.sender` must be the owner of the container
@@ -76,7 +76,7 @@ interface IContainer is IERC165, IERC721Receiver, IERC1155Receiver {
     /// @param amount The amount of the ERC-20 token to withdraw
     function withdrawERC20(IERC20 asset, uint256 amount) external;
 
-    /// @notice Withdraws the `tokenId` token from the ERC-721 `collection` collection
+    /// @notice Withdraws the `tokenId` token of the ERC-721 `collection` collection
     ///
     /// Requirements:
     /// - `msg.sender` must be the owner of the container
@@ -85,7 +85,7 @@ interface IContainer is IERC165, IERC721Receiver, IERC1155Receiver {
     /// @param tokenId The ID of the token to withdraw
     function withdrawERC721(IERC721 collection, uint256 tokenId) external;
 
-    /// @notice Withdraws an `amount` amount of ERC-1155 `id` token from the container
+    /// @notice Withdraws an `amount` amount of the ERC-1155 `id` token
     ///
     /// Requirements:
     /// - `msg.sender` must be the owner of the container
@@ -95,7 +95,7 @@ interface IContainer is IERC165, IERC721Receiver, IERC1155Receiver {
     /// @param amounts The amounts of tokens to withdraw
     function withdrawERC1155(IERC1155 collection, uint256[] memory ids, uint256[] memory amounts) external;
 
-    /// @notice Withdraws an `amount` amount of native token (ETH) from the container
+    /// @notice Withdraws an `amount` amount of native token (ETH)
     ///
     /// Requirements:
     /// - `msg.sender` must be the owner of the container
