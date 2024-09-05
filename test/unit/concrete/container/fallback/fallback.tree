@@ -1,0 +1,2 @@
+fallback.t.sol
+└── it should emit an {NativeReceived} event
