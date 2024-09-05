@@ -36,6 +36,21 @@ contract Container is IContainer, ModuleManager {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
+                                RECEIVE & FALLBACK
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Allow container to receive native token (ETH)
+    receive() external payable {
+        // Log the successful native token deposit
+        emit NativeReceived({ from: msg.sender, amount: msg.value });
+    }
+
+    /// @dev Fallback function to handle incoming calls with data
+    fallback() external payable {
+        emit NativeReceived({ from: msg.sender, amount: msg.value });
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
                                       MODIFIERS
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -138,12 +153,6 @@ contract Container is IContainer, ModuleManager {
     /// @inheritdoc IModuleManager
     function disableModule(address module) public override onlyOwner {
         super.disableModule(module);
-    }
-
-    /// @dev Allow container to receive native token (ETH)
-    receive() external payable {
-        // Log the successful native token deposit
-        emit NativeReceived({ from: msg.sender, amount: msg.value });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
