@@ -12,6 +12,8 @@ import { Container } from "./../src/Container.sol";
 import { ModuleKeeper } from "./../src/ModuleKeeper.sol";
 import { DockRegistry } from "./../src/DockRegistry.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { MockERC721Collection } from "./mocks/MockERC721Collection.sol";
+import { MockERC1155Collection } from "./mocks/MockERC1155Collection.sol";
 
 abstract contract Base_Test is Test, Events {
     /*//////////////////////////////////////////////////////////////////////////
@@ -31,6 +33,8 @@ abstract contract Base_Test is Test, Events {
     MockModule internal mockModule;
     MockNonCompliantContainer internal mockNonCompliantContainer;
     MockBadReceiver internal mockBadReceiver;
+    MockERC721Collection internal mockERC721;
+    MockERC1155Collection internal mockERC1155;
 
     /*//////////////////////////////////////////////////////////////////////////
                                    TEST STORAGE
@@ -59,6 +63,8 @@ abstract contract Base_Test is Test, Events {
         mockModule = new MockModule();
         mockNonCompliantContainer = new MockNonCompliantContainer({ _owner: users.admin });
         mockBadReceiver = new MockBadReceiver();
+        mockERC721 = new MockERC721Collection("MockERC721Collection", "MC");
+        mockERC1155 = new MockERC1155Collection("https://nft.com/0x1.json");
 
         // Create a mock modules array
         mockModules.push(address(mockModule));

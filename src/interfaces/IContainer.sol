@@ -2,30 +2,58 @@
 pragma solidity ^0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 
 /// @title IContainer
 /// @notice Contract that provides functionalities to store native token (ETH) value and any ERC-20 tokens, allowing
 /// external modules to be executed by extending its core functionalities
-interface IContainer is IERC165 {
+interface IContainer is IERC165, IERC721Receiver, IERC1155Receiver {
     /*//////////////////////////////////////////////////////////////////////////
                                        EVENTS
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when an `amount` amount of `asset` native tokens (ETH) is deposited on the container
-    /// @param sender The address of the depositor
+    /// @param from The address of the depositor
     /// @param amount The amount of the deposited ERC-20 token
-    event NativeDeposited(address indexed sender, uint256 amount);
+    event NativeReceived(address indexed from, uint256 amount);
 
-    /// @notice Emitted when an `amount` amount of `asset` ERC-20 asset is withdrawn from the container
-    /// @param sender The address to which the tokens were transferred
-    /// @param asset The address of the withdrawn ERC-20 token
-    /// @param amount The amount of the withdrawn ERC-20 token
-    event AssetWithdrawn(address indexed sender, address indexed asset, uint256 amount);
+    /// @notice Emitted when an ERC-721 token is received by the container
+    /// @param from The address of the depositor
+    /// @param tokenId The ID of the received token
+    event ERC721Received(address indexed from, uint256 indexed tokenId);
+
+    /// @notice Emitted when an ERC-1155 token is received by the container
+    /// @param from The address of the depositor
+    /// @param id The ID of the received token
+    /// @param value The amount of tokens received
+    event ERC1155Received(address indexed from, uint256 indexed id, uint256 value);
+
+    /// @notice Emitted when an `amount` amount of `asset` ERC-20 asset or native ETH is withdrawn from the container
+    /// @param to The address to which the tokens were transferred
+    /// @param asset The address of the ERC-20 token or zero-address for native ETH
+    /// @param amount The withdrawn amount
+    event AssetWithdrawn(address indexed to, address indexed asset, uint256 amount);
+
+    /// @notice Emitted when an ERC-721 token is withdrawn from the container
+    /// @param to The address to which the token was transferred
+    /// @param collection The address of the ERC-721 collection
+    /// @param tokenId The ID of the token
+    event ERC721Withdrawn(address indexed to, address indexed collection, uint256 tokenId);
+
+    /// @notice Emitted when a `value` amount of ERC-1155 `id` tokens are withdrawn from the container
+    /// @param to The address to which the tokens were transferred
+    /// @param collection The address of the ERC-1155 collection
+    /// @param ids The IDs of the tokens
+    /// @param values The amounts of the token types withdrawn
+    event ERC1155Withdrawn(address indexed to, address indexed collection, uint256[] ids, uint256[] values);
 
     /// @notice Emitted when a module execution is successful
-    /// @param module The address of the module that was executed
-    /// @param value The value sent to the module address required for the call
+    /// @param module The address of the module
+    /// @param value The value sent to the module required for the call
     /// @param data The ABI-encoded method called on the module
     event ModuleExecutionSucceded(address indexed module, uint256 value, bytes data);
 
@@ -39,7 +67,7 @@ interface IContainer is IERC165 {
     /// @param data The ABI-encode definition of the method (+inputs) to call
     function execute(address module, uint256 value, bytes memory data) external returns (bool success);
 
-    /// @notice Withdraws an `amount` amount of `asset` ERC-20 token from the container
+    /// @notice Withdraws an `amount` amount of `asset` ERC-20 token
     ///
     /// Requirements:
     /// - `msg.sender` must be the owner of the container
@@ -48,7 +76,26 @@ interface IContainer is IERC165 {
     /// @param amount The amount of the ERC-20 token to withdraw
     function withdrawERC20(IERC20 asset, uint256 amount) external;
 
-    /// @notice Withdraws an `amount` amount of native token (ETH) from the container
+    /// @notice Withdraws the `tokenId` token of the ERC-721 `collection` collection
+    ///
+    /// Requirements:
+    /// - `msg.sender` must be the owner of the container
+    ///
+    /// @param collection The address of the ERC-721 collection
+    /// @param tokenId The ID of the token to withdraw
+    function withdrawERC721(IERC721 collection, uint256 tokenId) external;
+
+    /// @notice Withdraws an `amount` amount of the ERC-1155 `id` token
+    ///
+    /// Requirements:
+    /// - `msg.sender` must be the owner of the container
+    ///
+    /// @param collection The address of the ERC-1155 collection
+    /// @param ids The IDs of tokens to withdraw
+    /// @param amounts The amounts of tokens to withdraw
+    function withdrawERC1155(IERC1155 collection, uint256[] memory ids, uint256[] memory amounts) external;
+
+    /// @notice Withdraws an `amount` amount of native token (ETH)
     ///
     /// Requirements:
     /// - `msg.sender` must be the owner of the container

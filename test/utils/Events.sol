@@ -48,19 +48,42 @@ abstract contract Events {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when an `amount` amount of `asset` native tokens (ETH) is deposited on the container
-    /// @param sender The address of the depositor
+    /// @param from The address of the depositor
     /// @param amount The amount of the deposited ERC-20 token
-    event NativeDeposited(address indexed sender, uint256 amount);
+    event NativeReceived(address indexed from, uint256 amount);
 
-    /// @notice Emitted when an `amount` amount of `asset` ERC-20 asset is withdrawn from the container
-    /// @param sender The address to which the tokens were transferred
-    /// @param asset The address of the withdrawn ERC-20 token
-    /// @param amount The amount of the withdrawn ERC-20 token
-    event AssetWithdrawn(address indexed sender, address indexed asset, uint256 amount);
+    /// @notice Emitted when an ERC-721 token is received by the container
+    /// @param from The address of the depositor
+    /// @param tokenId The ID of the received token
+    event ERC721Received(address indexed from, uint256 indexed tokenId);
+
+    /// @notice Emitted when an ERC-1155 token is received by the container
+    /// @param from The address of the depositor
+    /// @param id The ID of the received token
+    /// @param value The amount of tokens received
+    event ERC1155Received(address indexed from, uint256 indexed id, uint256 value);
+
+    /// @notice Emitted when an `amount` amount of `asset` ERC-20 asset or native ETH is withdrawn from the container
+    /// @param to The address to which the tokens were transferred
+    /// @param asset The address of the ERC-20 token or zero-address for native ETH
+    /// @param amount The withdrawn amount
+    event AssetWithdrawn(address indexed to, address indexed asset, uint256 amount);
+
+    /// @notice Emitted when an ERC-721 token is withdrawn from the container
+    /// @param to The address to which the token was transferred
+    /// @param collection The address of the ERC-721 collection
+    /// @param tokenId The ID of the token
+    event ERC721Withdrawn(address indexed to, address indexed collection, uint256 tokenId);
+
+    /// @notice Emitted when an ERC-1155 token is withdrawn from the container
+    /// @param to The address to which the tokens were transferred
+    /// @param ids The IDs of the tokens
+    /// @param amounts The amounts of the tokens
+    event ERC1155Withdrawn(address indexed to, address indexed collection, uint256[] ids, uint256[] amounts);
 
     /// @notice Emitted when a module execution is successful
-    /// @param module The address of the module that was executed
-    /// @param value The value sent to the module address required for the call
+    /// @param module The address of the module
+    /// @param value The value sent to the module required for the call
     /// @param data The ABI-encoded method called on the module
     event ModuleExecutionSucceded(address indexed module, uint256 value, bytes data);
 

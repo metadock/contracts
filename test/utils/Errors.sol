@@ -33,6 +33,12 @@ library Errors {
     /// @notice Thrown when the deposited ERC-20 token amount is zero
     error InvalidAssetZeroAmount();
 
+    /// @notice Thrown when the ERC-721 token ID does not exist
+    error ERC721NonexistentToken(uint256 tokenId);
+
+    /// @notice Thrown when the balance of the sender is insufficient to perform an ERC-1155 transfer
+    error ERC1155InsufficientBalance(address sender, uint256 balance, uint256 needed, uint256 tokenId);
+
     /*//////////////////////////////////////////////////////////////////////////
                                   MODULE-MANAGER
     //////////////////////////////////////////////////////////////////////////*/
