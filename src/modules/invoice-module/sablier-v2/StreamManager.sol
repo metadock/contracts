@@ -134,7 +134,20 @@ abstract contract StreamManager is IStreamManager {
         ISablierV2Lockup sablier = _getISablierV2Lockup(streamType);
 
         // Withdraw the maximum withdrawable amount
-        withdrawnAmount = _withdrawStream(sablier, streamId, to);
+        withdrawnAmount = _withdraw(sablier, streamId, to);
+    }
+
+    /// @inheritdoc IStreamManager
+    function withdrawMaxAndTransfer(
+        Types.Method streamType,
+        uint256 streamId,
+        address newRecipient
+    ) public returns (uint128 withdrawnAmount) {
+        // Set the according {ISablierV2Lockup} based on the stream type
+        ISablierV2Lockup sablier = _getISablierV2Lockup(streamType);
+
+        // Withdraw the maximum withdrawable amount and transfer the stream to the `to` address
+        withdrawnAmount = _withdrawMaxAndTransfer(sablier, streamId, newRecipient);
     }
 
     /// @inheritdoc IStreamManager
@@ -268,12 +281,21 @@ abstract contract StreamManager is IStreamManager {
     }
 
     /// @dev Withdraws the maximum withdrawable amount from either a linear or tranched stream
-    function _withdrawStream(
+    function _withdraw(
         ISablierV2Lockup sablier,
         uint256 streamId,
         address to
     ) internal returns (uint128 withdrawnAmount) {
         return sablier.withdrawMax(streamId, to);
+    }
+
+    /// @dev Withdraws the maximum withdrawable amount and transfers the stream to the `newRecipient` address
+    function _withdrawMaxAndTransfer(
+        ISablierV2Lockup sablier,
+        uint256 streamId,
+        address newRecipient
+    ) internal returns (uint128 withdrawnAmount) {
+        return sablier.withdrawMaxAndTransfer(streamId, newRecipient);
     }
 
     /// @dev Cancels the `streamId` stream

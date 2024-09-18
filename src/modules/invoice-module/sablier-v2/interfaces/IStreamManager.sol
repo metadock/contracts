@@ -102,6 +102,15 @@ interface IStreamManager {
         address to
     ) external returns (uint128 withdrawnAmount);
 
+    /// @notice See the documentation in {ISablierV2Lockup-withdrawMaxAndTransfer}
+    /// Notes:
+    /// - `streamType` parameter has been added to withdraw from the according {ISablierV2Lockup} contract
+    function withdrawMaxAndTransfer(
+        Types.Method streamType,
+        uint256 streamId,
+        address to
+    ) external returns (uint128 withdrawnAmount);
+
     /// @notice See the documentation in {ISablierV2Lockup-withdrawableAmountOf}
     /// Notes:
     /// - `streamType` parameter has been added to retrieve from the according {ISablierV2Lockup} contract
