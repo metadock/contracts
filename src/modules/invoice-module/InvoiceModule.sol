@@ -185,12 +185,8 @@ contract InvoiceModule is IInvoiceModule, StreamManager, ERC721 {
         Types.Invoice memory invoice = _invoices[id];
 
         // Retrieve the recipient of the invoice
+        // This will also check if the invoice is minted or not burned
         address recipient = ownerOf(id);
-
-        // Checks: the invoice is not null
-        if (recipient == address(0)) {
-            revert Errors.InvoiceNull();
-        }
 
         // Checks: the invoice is not already paid or canceled
         if (invoice.status == Types.Status.Paid) {
@@ -254,7 +250,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager, ERC721 {
         // - A linear or tranched stream MUST be canceled by calling the `cancel` method on the according
         // {ISablierV2Lockup} contract
         else if (invoice.status == Types.Status.Ongoing) {
-            cancelStream({ streamType: invoice.payment.method, streamId: invoice.payment.streamId });
+            _cancelStream({ streamType: invoice.payment.method, streamId: invoice.payment.streamId });
         }
 
         // Effects: mark the invoice as canceled
@@ -265,7 +261,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager, ERC721 {
     }
 
     /// @inheritdoc IInvoiceModule
-    function withdrawInvoiceStream(uint256 id) external {
+    function withdrawInvoiceStream(uint256 id) public returns (uint128 withdrawnAmount) {
         // Load the invoice from storage
         Types.Invoice memory invoice = _invoices[id];
 
@@ -280,7 +276,8 @@ contract InvoiceModule is IInvoiceModule, StreamManager, ERC721 {
         }
 
         // Check, Effects, Interactions: withdraw from the stream
-        withdrawStream({ streamType: invoice.payment.method, streamId: invoice.payment.streamId, to: recipient });
+        return
+            _withdrawStream({ streamType: invoice.payment.method, streamId: invoice.payment.streamId, to: recipient });
     }
 
     /// @inheritdoc ERC721
@@ -311,7 +308,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager, ERC721 {
         if (invoice.payment.streamId != 0) {
             // Checks and Effects: withdraw the maximum withdrawable amount to the current stream recipient
             // and transfer the stream NFT to the new recipient
-            withdrawMaxAndTransfer({
+            _withdrawMaxAndTransferStream({
                 streamType: invoice.payment.method,
                 streamId: invoice.payment.streamId,
                 newRecipient: to

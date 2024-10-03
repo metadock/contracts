@@ -92,5 +92,5 @@ interface IInvoiceModule {
     /// - reverts if the payment method of the `id` invoice is not linear or tranched stream based
     ///
     /// @param id The ID of the invoice
-    function withdrawInvoiceStream(uint256 id) external;
+    function withdrawInvoiceStream(uint256 id) external returns (uint128 withdrawnAmount);
 }
