@@ -15,11 +15,13 @@ contract DeployDeterministicInvoiceModule is BaseScript {
         string memory create2Salt,
         ISablierV2LockupLinear sablierLockupLinear,
         ISablierV2LockupTranched sablierLockupTranched,
-        address brokerAdmin
+        address brokerAdmin,
+        string memory baseURI
     ) public virtual broadcast returns (InvoiceModule invoiceModule) {
         bytes32 salt = bytes32(abi.encodePacked(create2Salt));
 
         // Deterministically deploy the {InvoiceModule} contracts
-        invoiceModule = new InvoiceModule{ salt: salt }(sablierLockupLinear, sablierLockupTranched, brokerAdmin);
+        invoiceModule =
+            new InvoiceModule{ salt: salt }(sablierLockupLinear, sablierLockupTranched, brokerAdmin, baseURI);
     }
 }
