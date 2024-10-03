@@ -5,9 +5,8 @@ import { Types } from "./../../src/modules/invoice-module/libraries/Types.sol";
 import { Helpers as InvoiceHelpers } from "./../../src/modules/invoice-module/libraries/Helpers.sol";
 
 library Helpers {
-    function createInvoiceDataType(address recipient) public view returns (Types.Invoice memory) {
+    function createInvoiceDataType() public view returns (Types.Invoice memory) {
         return Types.Invoice({
-            recipient: recipient,
             status: Types.Status.Pending,
             startTime: 0,
             endTime: uint40(block.timestamp) + 1 weeks,

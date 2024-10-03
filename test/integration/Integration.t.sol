@@ -7,6 +7,8 @@ import { SablierV2LockupLinear } from "@sablier/v2-core/src/SablierV2LockupLinea
 import { SablierV2LockupTranched } from "@sablier/v2-core/src/SablierV2LockupTranched.sol";
 import { NFTDescriptorMock } from "@sablier/v2-core/test/mocks/NFTDescriptorMock.sol";
 import { MockStreamManager } from "../mocks/MockStreamManager.sol";
+import { MockBadContainer } from "../mocks/MockBadContainer.sol";
+import { Container } from "./../../src/Container.sol";
 
 abstract contract Integration_Test is Base_Test {
     /*//////////////////////////////////////////////////////////////////////////
@@ -19,6 +21,7 @@ abstract contract Integration_Test is Base_Test {
     SablierV2LockupLinear internal sablierV2LockupLinear;
     SablierV2LockupTranched internal sablierV2LockupTranched;
     MockStreamManager internal mockStreamManager;
+    MockBadContainer internal badContainer;
 
     /*//////////////////////////////////////////////////////////////////////////
                                   SET-UP FUNCTION
@@ -37,6 +40,9 @@ abstract contract Integration_Test is Base_Test {
         // Deploy the {Container} contract with the {InvoiceModule} enabled by default
         container = deployContainer({ _owner: users.eve, _dockId: 0, _initialModules: modules });
 
+        // Deploy a "bad" {Container} with the `mockBadReceiver` as the owner
+        badContainer = deployBadContainer({ _owner: address(mockBadReceiver), _dockId: 0, _initialModules: modules });
+
         // Deploy the mock {StreamManager}
         mockStreamManager = new MockStreamManager(sablierV2LockupLinear, sablierV2LockupTranched, users.admin);
 
@@ -44,6 +50,8 @@ abstract contract Integration_Test is Base_Test {
         vm.label({ account: address(invoiceModule), newLabel: "InvoiceModule" });
         vm.label({ account: address(sablierV2LockupLinear), newLabel: "SablierV2LockupLinear" });
         vm.label({ account: address(sablierV2LockupTranched), newLabel: "SablierV2LockupTranched" });
+        vm.label({ account: address(container), newLabel: "Eve's Container" });
+        vm.label({ account: address(badContainer), newLabel: "Bad receiver's Container" });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -63,7 +71,8 @@ abstract contract Integration_Test is Base_Test {
         invoiceModule = new InvoiceModule({
             _sablierLockupLinear: sablierV2LockupLinear,
             _sablierLockupTranched: sablierV2LockupTranched,
-            _brokerAdmin: users.admin
+            _brokerAdmin: users.admin,
+            _URI: "ipfs://CID/"
         });
     }
 }

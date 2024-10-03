@@ -44,7 +44,6 @@ contract PayInvoice_Integration_Fuzz_Test is PayInvoice_Integration_Shared_Test 
 
         // Create a new invoice with a transfer-based payment
         invoice = Types.Invoice({
-            recipient: users.eve,
             status: Types.Status.Pending,
             startTime: startTime,
             endTime: endTime,
@@ -60,10 +59,10 @@ contract PayInvoice_Integration_Fuzz_Test is PayInvoice_Integration_Shared_Test 
 
         // Create the calldata for the {InvoiceModule} execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
+            "createInvoice((uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
-        // Make Eve the caller to create the fuzzed invoice
+        // Make Eve the caller to create the fuzzed  invoice
         vm.startPrank({ msgSender: users.eve });
 
         // Create the fuzzed invoice
@@ -80,7 +79,7 @@ contract PayInvoice_Integration_Fuzz_Test is PayInvoice_Integration_Shared_Test 
 
         // Store the USDT balances of the payer and recipient before paying the invoice
         uint256 balanceOfPayerBefore = usdt.balanceOf(users.bob);
-        uint256 balanceOfRecipientBefore = usdt.balanceOf(users.eve);
+        uint256 balanceOfRecipientBefore = usdt.balanceOf(address(container));
 
         uint256 streamId = paymentMethod == 0 ? 0 : 1;
         numberOfPayments = numberOfPayments > 0 ? numberOfPayments - 1 : 0;
@@ -116,9 +115,9 @@ contract PayInvoice_Integration_Fuzz_Test is PayInvoice_Integration_Shared_Test 
         // Assert the actual and expected balances of the payer and recipient
         assertEq(usdt.balanceOf(users.bob), balanceOfPayerBefore - invoice.payment.amount);
         if (invoice.payment.method == Types.Method.Transfer) {
-            assertEq(usdt.balanceOf(users.eve), balanceOfRecipientBefore + invoice.payment.amount);
+            assertEq(usdt.balanceOf(address(container)), balanceOfRecipientBefore + invoice.payment.amount);
         } else {
-            assertEq(usdt.balanceOf(users.eve), balanceOfRecipientBefore);
+            assertEq(usdt.balanceOf(address(container)), balanceOfRecipientBefore);
         }
     }
 }

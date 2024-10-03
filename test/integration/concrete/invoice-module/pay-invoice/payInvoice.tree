@@ -1,6 +1,6 @@
 payInvoice.t.sol
-├── when the invoice IS null
-│   └── it should revert with the {InvoiceNull} error
+├── when the invoice IS null (there is no ERC-721 token minted)
+│   └── it should revert with the {ERC721NonexistentToken} error
 └── when the invoice IS NOT null
     ├── when the invoice IS already paid
     │   └── it should revert with the {InvoiceAlreadyPaid} error

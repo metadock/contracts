@@ -14,7 +14,7 @@ contract WithdrawLinearStream_Integration_Concret_Test is WithdrawLinearStream_I
         uint256 invoiceId = 4;
         uint256 streamId = 1;
 
-        // The invoice must be paid for its status to be updated to `Ongoing`
+        // The invoice must be paid in order to update its status to `Ongoing`
         // Make Bob the payer of the invoice (also Bob will be the initial stream sender)
         vm.startPrank({ msgSender: users.bob });
 
@@ -27,21 +27,21 @@ contract WithdrawLinearStream_Integration_Concret_Test is WithdrawLinearStream_I
         // Advance the timestamp by 5 weeks to simulate the withdrawal
         vm.warp(block.timestamp + 5 weeks);
 
-        // Store Eve's balance before withdrawing the USDT tokens
-        uint256 balanceOfBefore = usdt.balanceOf(users.eve);
+        // Store Eve's container balance before withdrawing the USDT tokens
+        uint256 balanceOfBefore = usdt.balanceOf(address(container));
 
         // Get the maximum withdrawable amount from the stream
         uint128 maxWithdrawableAmount =
             invoiceModule.withdrawableAmountOf({ streamType: Types.Method.LinearStream, streamId: streamId });
 
-        // Make Eve the caller in this test suite as she's the recipient of the invoice
-        vm.startPrank({ msgSender: users.eve });
+        // Make Eve's container the caller in this test suite as his container is the recipient of the invoice
+        vm.startPrank({ msgSender: address(container) });
 
         // Run the test
-        invoiceModule.withdrawStream({ streamType: Types.Method.LinearStream, streamId: streamId, to: users.eve });
+        invoiceModule.withdrawInvoiceStream(invoiceId);
 
         // Assert the current and expected USDT balance of Eve
-        assertEq(balanceOfBefore + maxWithdrawableAmount, usdt.balanceOf(users.eve));
+        assertEq(balanceOfBefore + maxWithdrawableAmount, usdt.balanceOf(address(container)));
     }
 
     function test_WithdrawStream_TranchedStream() external givenPaymentMethodTranchedStream givenInvoiceStatusOngoing {
@@ -62,20 +62,20 @@ contract WithdrawLinearStream_Integration_Concret_Test is WithdrawLinearStream_I
         // Advance the timestamp by 5 weeks to simulate the withdrawal
         vm.warp(block.timestamp + 5 weeks);
 
-        // Store Eve's balance before withdrawing the USDT tokens
-        uint256 balanceOfBefore = usdt.balanceOf(users.eve);
+        // Store Eve's container balance before withdrawing the USDT tokens
+        uint256 balanceOfBefore = usdt.balanceOf(address(container));
 
         // Get the maximum withdrawable amount from the stream
         uint128 maxWithdrawableAmount =
             invoiceModule.withdrawableAmountOf({ streamType: Types.Method.TranchedStream, streamId: streamId });
 
-        // Make Eve the caller in this test suite as she's the recipient of the invoice
-        vm.startPrank({ msgSender: users.eve });
+        // Make Eve's container the caller in this test suite as her container is the owner of the invoice
+        vm.startPrank({ msgSender: address(container) });
 
         // Run the test
         invoiceModule.withdrawInvoiceStream(invoiceId);
 
-        // Assert the current and expected USDT balance of Eve
-        assertEq(balanceOfBefore + maxWithdrawableAmount, usdt.balanceOf(users.eve));
+        // Assert the current and expected USDT balance of Eve's container
+        assertEq(balanceOfBefore + maxWithdrawableAmount, usdt.balanceOf(address(container)));
     }
 }

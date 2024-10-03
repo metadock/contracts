@@ -14,27 +14,27 @@ abstract contract PayInvoice_Integration_Shared_Test is Integration_Test, Create
 
     function createMockInvoices() internal {
         // Create a mock invoice with a one-off USDT transfer
-        Types.Invoice memory invoice = createInvoiceWithOneOffTransfer({ asset: address(usdt), recipient: users.eve });
+        Types.Invoice memory invoice = createInvoiceWithOneOffTransfer({ asset: address(usdt) });
         invoices[1] = invoice;
         executeCreateInvoice({ invoice: invoice, user: users.eve });
 
         // Create a mock invoice with a one-off ETH transfer
-        invoice = createInvoiceWithOneOffTransfer({ asset: address(0), recipient: users.eve });
+        invoice = createInvoiceWithOneOffTransfer({ asset: address(0) });
         invoices[2] = invoice;
         executeCreateInvoice({ invoice: invoice, user: users.eve });
 
         // Create a mock invoice with a recurring USDT transfer
-        invoice = createInvoiceWithRecurringTransfer({ recurrence: Types.Recurrence.Weekly, recipient: users.eve });
+        invoice = createInvoiceWithRecurringTransfer({ recurrence: Types.Recurrence.Weekly });
         invoices[3] = invoice;
         executeCreateInvoice({ invoice: invoice, user: users.eve });
 
         // Create a mock invoice with a linear stream payment
-        invoice = createInvoiceWithLinearStream({ recipient: users.eve });
+        invoice = createInvoiceWithLinearStream();
         invoices[4] = invoice;
         executeCreateInvoice({ invoice: invoice, user: users.eve });
 
         // Create a mock invoice with a tranched stream payment
-        invoice = createInvoiceWithTranchedStream({ recurrence: Types.Recurrence.Weekly, recipient: users.eve });
+        invoice = createInvoiceWithTranchedStream({ recurrence: Types.Recurrence.Weekly });
         invoices[5] = invoice;
         executeCreateInvoice({ invoice: invoice, user: users.eve });
     }
