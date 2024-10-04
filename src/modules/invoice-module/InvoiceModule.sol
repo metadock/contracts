@@ -31,6 +31,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager, ERC721 {
     /// @dev Counter to keep track of the next ID used to create a new invoice
     uint256 private _nextInvoiceId;
 
+    /// @dev Base URI used to get the ERC-721 `tokenURI` metadata JSON schema
     string private _collectionURI;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -292,14 +293,6 @@ contract InvoiceModule is IInvoiceModule, StreamManager, ERC721 {
 
     /// @inheritdoc ERC721
     function transferFrom(address from, address to, uint256 tokenId) public override {
-        // Retrieve the current recipient of the invoice
-        address currentRecipient = ownerOf(tokenId);
-
-        // Checks: the invoice is not null
-        if (currentRecipient == address(0)) {
-            revert Errors.InvoiceNull();
-        }
-
         // Retrieve the invoice details
         Types.Invoice memory invoice = _invoices[tokenId];
 
@@ -315,7 +308,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager, ERC721 {
             });
         }
 
-        // Checks and Effects: transfer the invoice NFT
+        // Checks, Effects and Interactions: transfer the invoice NFT
         super.transferFrom(from, to, tokenId);
     }
 
