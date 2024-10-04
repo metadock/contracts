@@ -243,7 +243,7 @@ abstract contract StreamManager is IStreamManager {
         return sablier.withdrawMax(streamId, to);
     }
 
-    /// @dev See the documentation in {ISablierV2Lockup-withdrawMaxAndTransfer}
+    /// @dev Withdraws the maximum withdrawable amount and transfers the stream NFT to the new recipient
     /// Notes:
     /// - `streamType` parameter has been added to withdraw from the according {ISablierV2Lockup} contract
     function _withdrawMaxAndTransferStream(
@@ -254,8 +254,14 @@ abstract contract StreamManager is IStreamManager {
         // Set the according {ISablierV2Lockup} based on the stream type
         ISablierV2Lockup sablier = _getISablierV2Lockup(streamType);
 
-        // Withdraw the maximum withdrawable amount and transfer the stream to the `to` address
-        return sablier.withdrawMaxAndTransfer(streamId, newRecipient);
+        // Checks: the caller is the current recipient. This also checks that the NFT was not burned.
+        address currentRecipient = sablier.ownerOf(streamId);
+
+        // Checks, Effects and Interactions: withdraw the maximum withdrawable amount
+        withdrawnAmount = sablier.withdrawMax(streamId, currentRecipient);
+
+        // Interactions: transfer the stream to the new recipient
+        sablier.transferFrom({ from: msg.sender, to: newRecipient, tokenId: streamId });
     }
 
     /// @dev See the documentation in {ISablierV2Lockup-cancel}
