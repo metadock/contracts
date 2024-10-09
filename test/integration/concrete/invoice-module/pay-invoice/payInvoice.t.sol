@@ -11,7 +11,6 @@ import { LockupLinear, LockupTranched } from "@sablier/v2-core/src/types/DataTyp
 contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Test {
     function setUp() public virtual override {
         PayInvoice_Integration_Shared_Test.setUp();
-        createMockInvoices();
     }
 
     function test_RevertWhen_InvoiceNull() external {
@@ -100,14 +99,16 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         Types.Invoice memory invoice = createInvoiceWithOneOffTransfer({ asset: address(0) });
         executeCreateInvoice({ invoice: invoice, user: users.eve });
 
+        uint256 invoiceId = _nextInvoiceId;
+
         // Make Eve's container the caller for the next call to approve & transfer the invoice NFT to a bad receiver
         vm.startPrank({ msgSender: address(container) });
 
         // Approve the {InvoiceModule} to transfer the token
-        invoiceModule.approve({ to: address(invoiceModule), tokenId: 11 });
+        invoiceModule.approve({ to: address(invoiceModule), tokenId: invoiceId });
 
         // Transfer the invoice to a bad receiver so we can test against `NativeTokenPaymentFailed`
-        invoiceModule.transferFrom({ from: address(container), to: address(mockBadReceiver), tokenId: 11 });
+        invoiceModule.transferFrom({ from: address(container), to: address(mockBadReceiver), tokenId: invoiceId });
 
         // Make Bob the payer for this invoice
         vm.startPrank({ msgSender: users.bob });
@@ -116,7 +117,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         vm.expectRevert(Errors.NativeTokenPaymentFailed.selector);
 
         // Run the test
-        invoiceModule.payInvoice{ value: invoice.payment.amount }({ id: 11 });
+        invoiceModule.payInvoice{ value: invoice.payment.amount }({ id: invoiceId });
     }
 
     function test_PayInvoice_PaymentMethodTransfer_NativeToken_OneOff()
