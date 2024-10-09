@@ -104,10 +104,10 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         vm.startPrank({ msgSender: address(container) });
 
         // Approve the {InvoiceModule} to transfer the token
-        invoiceModule.approve({ to: address(invoiceModule), tokenId: 6 });
+        invoiceModule.approve({ to: address(invoiceModule), tokenId: 11 });
 
         // Transfer the invoice to a bad receiver so we can test against `NativeTokenPaymentFailed`
-        invoiceModule.transferFrom({ from: address(container), to: address(mockBadReceiver), tokenId: 6 });
+        invoiceModule.transferFrom({ from: address(container), to: address(mockBadReceiver), tokenId: 11 });
 
         // Make Bob the payer for this invoice
         vm.startPrank({ msgSender: users.bob });
@@ -116,7 +116,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         vm.expectRevert(Errors.NativeTokenPaymentFailed.selector);
 
         // Run the test
-        invoiceModule.payInvoice{ value: invoice.payment.amount }({ id: 6 });
+        invoiceModule.payInvoice{ value: invoice.payment.amount }({ id: 11 });
     }
 
     function test_PayInvoice_PaymentMethodTransfer_NativeToken_OneOff()

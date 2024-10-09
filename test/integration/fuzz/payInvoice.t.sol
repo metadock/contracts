@@ -42,7 +42,7 @@ contract PayInvoice_Integration_Fuzz_Test is PayInvoice_Integration_Shared_Test 
             Helpers.checkFuzzedPaymentMethod(paymentMethod, recurrence, startTime, endTime);
         if (!valid) return;
 
-        // Create a new invoice with a transfer-based payment
+        // Create a new invoice with the fuzzed payment method
         invoice = Types.Invoice({
             status: Types.Status.Pending,
             startTime: startTime,
@@ -61,6 +61,8 @@ contract PayInvoice_Integration_Fuzz_Test is PayInvoice_Integration_Shared_Test 
         bytes memory data = abi.encodeWithSignature(
             "createInvoice((uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
+
+        uint256 invoiceId = _nextInvoiceId;
 
         // Make Eve the caller to create the fuzzed  invoice
         vm.startPrank({ msgSender: users.eve });
@@ -91,7 +93,7 @@ contract PayInvoice_Integration_Fuzz_Test is PayInvoice_Integration_Shared_Test 
         // Expect the {InvoicePaid} event to be emitted
         vm.expectEmit();
         emit Events.InvoicePaid({
-            id: 1,
+            id: invoiceId,
             payer: users.bob,
             status: expectedInvoiceStatus,
             payment: Types.Payment({
@@ -105,10 +107,10 @@ contract PayInvoice_Integration_Fuzz_Test is PayInvoice_Integration_Shared_Test 
         });
 
         // Run the test
-        invoiceModule.payInvoice({ id: 1 });
+        invoiceModule.payInvoice({ id: invoiceId });
 
         // Assert the actual and the expected state of the invoice
-        Types.Invoice memory actualInvoice = invoiceModule.getInvoice({ id: 1 });
+        Types.Invoice memory actualInvoice = invoiceModule.getInvoice({ id: invoiceId });
         assertEq(uint8(actualInvoice.status), uint8(expectedInvoiceStatus));
         assertEq(actualInvoice.payment.paymentsLeft, numberOfPayments);
 

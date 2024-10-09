@@ -7,6 +7,7 @@ import { IContainer } from "./../../../src/interfaces/IContainer.sol";
 
 abstract contract CreateInvoice_Integration_Shared_Test is Integration_Test {
     mapping(uint256 invoiceId => Types.Invoice) invoices;
+    uint256 public _nextInvoiceId;
 
     function setUp() public virtual override {
         Integration_Test.setUp();
@@ -37,6 +38,8 @@ abstract contract CreateInvoice_Integration_Shared_Test is Integration_Test {
         invoice = createInvoiceWithTranchedStream({ recurrence: Types.Recurrence.Weekly });
         invoices[5] = invoice;
         executeCreateInvoice({ invoice: invoice, user: users.eve });
+
+        _nextInvoiceId = 6;
     }
 
     modifier whenCallerContract() {
