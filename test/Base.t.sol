@@ -14,6 +14,7 @@ import { DockRegistry } from "./../src/DockRegistry.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { MockERC721Collection } from "./mocks/MockERC721Collection.sol";
 import { MockERC1155Collection } from "./mocks/MockERC1155Collection.sol";
+import { MockBadContainer } from "./mocks/MockBadContainer.sol";
 
 abstract contract Base_Test is Test, Events {
     /*//////////////////////////////////////////////////////////////////////////
@@ -94,6 +95,25 @@ abstract contract Base_Test is Test, Events {
         vm.prank({ msgSender: _owner });
         _container =
             Container(payable(dockRegistry.createContainer({ dockId: _dockId, initialModules: _initialModules })));
+        vm.stopPrank();
+    }
+
+    /// @dev Deploys a new {MockBadContainer} contract based on the provided `owner`, `moduleKeeper` and `initialModules` input params
+    function deployBadContainer(
+        address _owner,
+        uint256 _dockId,
+        address[] memory _initialModules
+    ) internal returns (MockBadContainer _container) {
+        vm.startPrank({ msgSender: users.admin });
+        for (uint256 i; i < _initialModules.length; ++i) {
+            allowlistModule(_initialModules[i]);
+        }
+        vm.stopPrank();
+
+        vm.prank({ msgSender: _owner });
+        _container = MockBadContainer(
+            payable(dockRegistry.createContainer({ dockId: _dockId, initialModules: _initialModules }))
+        );
         vm.stopPrank();
     }
 

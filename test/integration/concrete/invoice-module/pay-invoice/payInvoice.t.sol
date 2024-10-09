@@ -11,12 +11,11 @@ import { LockupLinear, LockupTranched } from "@sablier/v2-core/src/types/DataTyp
 contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Test {
     function setUp() public virtual override {
         PayInvoice_Integration_Shared_Test.setUp();
-        createMockInvoices();
     }
 
     function test_RevertWhen_InvoiceNull() external {
-        // Expect the call to revert with the {InvoiceNull} error
-        vm.expectRevert(Errors.InvoiceNull.selector);
+        // Expect the call to revert with the {ERC721NonexistentToken} error
+        vm.expectRevert(abi.encodeWithSelector(Errors.ERC721NonexistentToken.selector, 99));
 
         // Run the test
         invoiceModule.payInvoice({ id: 99 });
@@ -46,8 +45,8 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         // Set the one-off USDT transfer invoice as current one
         uint256 invoiceId = 1;
 
-        // Make Eve the caller in this test suite as she's the owner of the {Container} contract
-        vm.startPrank({ msgSender: users.eve });
+        // Make Eve's container the caller in this test suite as his container is the owner of the invoice
+        vm.startPrank({ msgSender: address(container) });
 
         // Cancel the invoice first
         invoiceModule.cancelInvoice({ id: invoiceId });
@@ -96,19 +95,29 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         givenPaymentAmountInNativeToken
         whenPaymentAmountEqualToInvoiceValue
     {
-        // Create a mock invoice with a one-off ETH transfer and set {MockBadReceiver} as the recipient
-        Types.Invoice memory invoice =
-            createInvoiceWithOneOffTransfer({ asset: address(0), recipient: address(mockBadReceiver) });
+        // Create a mock invoice with a one-off ETH transfer from the Eve's container
+        Types.Invoice memory invoice = createInvoiceWithOneOffTransfer({ asset: address(0) });
         executeCreateInvoice({ invoice: invoice, user: users.eve });
 
-        // Make {MockBadReceiver} the payer for this invoice
+        uint256 invoiceId = _nextInvoiceId;
+
+        // Make Eve's container the caller for the next call to approve & transfer the invoice NFT to a bad receiver
+        vm.startPrank({ msgSender: address(container) });
+
+        // Approve the {InvoiceModule} to transfer the token
+        invoiceModule.approve({ to: address(invoiceModule), tokenId: invoiceId });
+
+        // Transfer the invoice to a bad receiver so we can test against `NativeTokenPaymentFailed`
+        invoiceModule.transferFrom({ from: address(container), to: address(mockBadReceiver), tokenId: invoiceId });
+
+        // Make Bob the payer for this invoice
         vm.startPrank({ msgSender: users.bob });
 
         // Expect the call to be reverted with the {NativeTokenPaymentFailed} error
         vm.expectRevert(Errors.NativeTokenPaymentFailed.selector);
 
         // Run the test
-        invoiceModule.payInvoice{ value: invoice.payment.amount }({ id: 6 });
+        invoiceModule.payInvoice{ value: invoice.payment.amount }({ id: invoiceId });
     }
 
     function test_PayInvoice_PaymentMethodTransfer_NativeToken_OneOff()
@@ -129,7 +138,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
 
         // Store the ETH balances of Bob and recipient before paying the invoice
         uint256 balanceOfBobBefore = address(users.bob).balance;
-        uint256 balanceOfRecipientBefore = address(invoices[invoiceId].recipient).balance;
+        uint256 balanceOfRecipientBefore = address(container).balance;
 
         // Expect the {InvoicePaid} event to be emitted
         vm.expectEmit();
@@ -157,10 +166,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
 
         // Assert the balances of payer and recipient
         assertEq(address(users.bob).balance, balanceOfBobBefore - invoices[invoiceId].payment.amount);
-        assertEq(
-            address(invoices[invoiceId].recipient).balance,
-            balanceOfRecipientBefore + invoices[invoiceId].payment.amount
-        );
+        assertEq(address(container).balance, balanceOfRecipientBefore + invoices[invoiceId].payment.amount);
     }
 
     function test_PayInvoice_PaymentMethodTransfer_ERC20Token_Recurring()
@@ -180,7 +186,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
 
         // Store the USDT balances of Bob and recipient before paying the invoice
         uint256 balanceOfBobBefore = usdt.balanceOf(users.bob);
-        uint256 balanceOfRecipientBefore = usdt.balanceOf(invoices[invoiceId].recipient);
+        uint256 balanceOfRecipientBefore = usdt.balanceOf(address(container));
 
         // Approve the {InvoiceModule} to transfer the ERC-20 tokens on Bob's behalf
         usdt.approve({ spender: address(invoiceModule), amount: invoices[invoiceId].payment.amount });
@@ -211,9 +217,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
 
         // Assert the balances of payer and recipient
         assertEq(usdt.balanceOf(users.bob), balanceOfBobBefore - invoices[invoiceId].payment.amount);
-        assertEq(
-            usdt.balanceOf(invoices[invoiceId].recipient), balanceOfRecipientBefore + invoices[invoiceId].payment.amount
-        );
+        assertEq(usdt.balanceOf(address(container)), balanceOfRecipientBefore + invoices[invoiceId].payment.amount);
     }
 
     function test_PayInvoice_PaymentMethodLinearStream()
@@ -262,7 +266,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         // Assert the actual and the expected state of the Sablier v2 linear stream
         LockupLinear.StreamLL memory stream = invoiceModule.getLinearStream({ streamId: 1 });
         assertEq(stream.sender, address(invoiceModule));
-        assertEq(stream.recipient, users.eve);
+        assertEq(stream.recipient, address(container));
         assertEq(address(stream.asset), address(usdt));
         assertEq(stream.startTime, invoice.startTime);
         assertEq(stream.endTime, invoice.endTime);
@@ -314,7 +318,7 @@ contract PayInvoice_Integration_Concret_Test is PayInvoice_Integration_Shared_Te
         // Assert the actual and the expected state of the Sablier v2 tranched stream
         LockupTranched.StreamLT memory stream = invoiceModule.getTranchedStream({ streamId: 1 });
         assertEq(stream.sender, address(invoiceModule));
-        assertEq(stream.recipient, users.eve);
+        assertEq(stream.recipient, address(container));
         assertEq(address(stream.asset), address(usdt));
         assertEq(stream.startTime, invoice.startTime);
         assertEq(stream.endTime, invoice.endTime);

@@ -64,7 +64,6 @@ library Types {
     /// @param payment The payment struct describing the invoice payment
     struct Invoice {
         // slot 0
-        address recipient;
         Status status;
         uint40 startTime;
         uint40 endTime;

@@ -19,7 +19,6 @@ contract CreateInvoice_Integration_Fuzz_Test is CreateInvoice_Integration_Shared
     function testFuzz_CreateInvoice(
         uint8 recurrence,
         uint8 paymentMethod,
-        address recipient,
         uint40 startTime,
         uint40 endTime,
         uint128 amount
@@ -37,7 +36,6 @@ contract CreateInvoice_Integration_Fuzz_Test is CreateInvoice_Integration_Shared
         vm.assume(recurrence < 4);
         // Assume recurrence is within Types.Method enum values (Transfer, LinearStream, TranchedStream) (0, 1, 2)
         vm.assume(paymentMethod < 3);
-        vm.assume(recipient != address(0) && recipient != address(this));
         vm.assume(startTime >= uint40(block.timestamp) && startTime < endTime);
         vm.assume(amount > 0);
 
@@ -48,7 +46,6 @@ contract CreateInvoice_Integration_Fuzz_Test is CreateInvoice_Integration_Shared
 
         // Create a new invoice with a transfer-based payment
         invoice = Types.Invoice({
-            recipient: recipient,
             status: Types.Status.Pending,
             startTime: startTime,
             endTime: endTime,
@@ -64,14 +61,14 @@ contract CreateInvoice_Integration_Fuzz_Test is CreateInvoice_Integration_Shared
 
         // Create the calldata for the {InvoiceModule} execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
+            "createInvoice((uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
         // Expect the module call to emit an {InvoiceCreated} event
         vm.expectEmit();
         emit Events.InvoiceCreated({
             id: 1,
-            recipient: invoice.recipient,
+            recipient: address(container),
             status: Types.Status.Pending,
             startTime: invoice.startTime,
             endTime: invoice.endTime,
@@ -87,7 +84,9 @@ contract CreateInvoice_Integration_Fuzz_Test is CreateInvoice_Integration_Shared
 
         // Assert the actual and expected invoice state
         Types.Invoice memory actualInvoice = invoiceModule.getInvoice({ id: 1 });
-        assertEq(actualInvoice.recipient, invoice.recipient);
+        address actualRecipient = invoiceModule.ownerOf(1);
+
+        assertEq(actualRecipient, address(container));
         assertEq(uint8(actualInvoice.status), uint8(Types.Status.Pending));
         assertEq(actualInvoice.startTime, invoice.startTime);
         assertEq(actualInvoice.endTime, invoice.endTime);

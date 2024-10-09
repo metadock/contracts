@@ -51,6 +51,22 @@ interface IStreamManager {
     /// @param streamId The ID of the stream to be retrieved
     function getTranchedStream(uint256 streamId) external view returns (LockupTranched.StreamLT memory stream);
 
+    /// @notice See the documentation in {ISablierV2Lockup-withdrawableAmountOf}
+    /// Notes:
+    /// - `streamType` parameter has been added to retrieve from the according {ISablierV2Lockup} contract
+    function withdrawableAmountOf(
+        Types.Method streamType,
+        uint256 streamId
+    ) external view returns (uint128 withdrawableAmount);
+
+    /// @notice See the documentation in {ISablierV2Lockup-streamedAmountOf}
+    /// Notes:
+    /// - `streamType` parameter has been added to retrieve from the according {ISablierV2Lockup} contract
+    function streamedAmountOf(
+        Types.Method streamType,
+        uint256 streamId
+    ) external view returns (uint128 streamedAmount);
+
     /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -88,39 +104,9 @@ interface IStreamManager {
     /// @notice Updates the fee charged by the broker
     ///
     /// Notes:
+    /// - `msg.sender` must be the broker admin
     /// - The new fee will be applied only to the new streams hence it can't be retrospectively updated
     ///
     /// @param newBrokerFee The new broker fee
     function updateStreamBrokerFee(UD60x18 newBrokerFee) external;
-
-    /// @notice See the documentation in {ISablierV2Lockup-withdrawMax}
-    /// Notes:
-    /// - `streamType` parameter has been added to withdraw from the according {ISablierV2Lockup} contract
-    function withdrawStream(
-        Types.Method streamType,
-        uint256 streamId,
-        address to
-    ) external returns (uint128 withdrawnAmount);
-
-    /// @notice See the documentation in {ISablierV2Lockup-withdrawableAmountOf}
-    /// Notes:
-    /// - `streamType` parameter has been added to retrieve from the according {ISablierV2Lockup} contract
-    function withdrawableAmountOf(
-        Types.Method streamType,
-        uint256 streamId
-    ) external view returns (uint128 withdrawableAmount);
-
-    /// @notice See the documentation in {ISablierV2Lockup-streamedAmountOf}
-    /// Notes:
-    /// - `streamType` parameter has been added to retrieve from the according {ISablierV2Lockup} contract
-    function streamedAmountOf(
-        Types.Method streamType,
-        uint256 streamId
-    ) external view returns (uint128 streamedAmount);
-
-    /// @notice See the documentation in {ISablierV2Lockup-cancel}
-    ///
-    /// Notes:
-    /// - Reverts with {OnlyInitialStreamSender} if `msg.sender` is not the initial stream creator
-    function cancelStream(Types.Method streamType, uint256 streamId) external;
 }

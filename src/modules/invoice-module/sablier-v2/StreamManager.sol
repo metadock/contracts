@@ -61,13 +61,30 @@ abstract contract StreamManager is IStreamManager {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                                      MODIFIERS
+                                CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Reverts if the `msg.sender` is not the broker admin account or contract
-    modifier onlyBrokerAdmin() {
-        if (msg.sender != brokerAdmin) revert Errors.OnlyBrokerAdmin();
-        _;
+    /// @inheritdoc IStreamManager
+    function getLinearStream(uint256 streamId) public view returns (LockupLinear.StreamLL memory stream) {
+        stream = LOCKUP_LINEAR.getStream(streamId);
+    }
+
+    /// @inheritdoc IStreamManager
+    function getTranchedStream(uint256 streamId) public view returns (LockupTranched.StreamLT memory stream) {
+        stream = LOCKUP_TRANCHED.getStream(streamId);
+    }
+
+    /// @inheritdoc IStreamManager
+    function withdrawableAmountOf(
+        Types.Method streamType,
+        uint256 streamId
+    ) public view returns (uint128 withdrawableAmount) {
+        withdrawableAmount = _getISablierV2Lockup(streamType).withdrawableAmountOf(streamId);
+    }
+
+    /// @inheritdoc IStreamManager
+    function streamedAmountOf(Types.Method streamType, uint256 streamId) public view returns (uint128 streamedAmount) {
+        streamedAmount = _getISablierV2Lockup(streamType).streamedAmountOf(streamId);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -112,7 +129,10 @@ abstract contract StreamManager is IStreamManager {
     }
 
     /// @inheritdoc IStreamManager
-    function updateStreamBrokerFee(UD60x18 newBrokerFee) public onlyBrokerAdmin {
+    function updateStreamBrokerFee(UD60x18 newBrokerFee) public {
+        // Checks: the `msg.sender` is the broker admin
+        if (msg.sender != brokerAdmin) revert Errors.OnlyBrokerAdmin();
+
         // Log the broker fee update
         emit BrokerFeeUpdated({ oldFee: brokerFee, newFee: newBrokerFee });
 
@@ -121,69 +141,11 @@ abstract contract StreamManager is IStreamManager {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                                WITHDRAW FUNCTIONS
+                             INTERNAL MANAGEMENT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IStreamManager
-    function withdrawStream(
-        Types.Method streamType,
-        uint256 streamId,
-        address to
-    ) public returns (uint128 withdrawnAmount) {
-        // Set the according {ISablierV2Lockup} based on the stream type
-        ISablierV2Lockup sablier = _getISablierV2Lockup(streamType);
-
-        // Withdraw the maximum withdrawable amount
-        withdrawnAmount = _withdrawStream(sablier, streamId, to);
-    }
-
-    /// @inheritdoc IStreamManager
-    function withdrawableAmountOf(
-        Types.Method streamType,
-        uint256 streamId
-    ) public view returns (uint128 withdrawableAmount) {
-        withdrawableAmount = _getISablierV2Lockup(streamType).withdrawableAmountOf(streamId);
-    }
-
-    /// @inheritdoc IStreamManager
-    function streamedAmountOf(Types.Method streamType, uint256 streamId) public view returns (uint128 streamedAmount) {
-        streamedAmount = _getISablierV2Lockup(streamType).streamedAmountOf(streamId);
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                CANCEL FUNCTIONS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @inheritdoc IStreamManager
-    function cancelStream(Types.Method streamType, uint256 streamId) public {
-        // Set the according {ISablierV2Lockup} based on the stream type
-        ISablierV2Lockup sablier = _getISablierV2Lockup(streamType);
-
-        // Checks, Effect, Interactions
-        _cancelStream(sablier, streamId);
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                CONSTANT FUNCTIONS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @inheritdoc IStreamManager
-    function getLinearStream(uint256 streamId) public view returns (LockupLinear.StreamLL memory stream) {
-        stream = LOCKUP_LINEAR.getStream(streamId);
-    }
-
-    /// @inheritdoc IStreamManager
-    function getTranchedStream(uint256 streamId) public view returns (LockupTranched.StreamLT memory stream) {
-        stream = LOCKUP_TRANCHED.getStream(streamId);
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                INTERNAL FUNCTIONS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @notice Creates a Lockup Linear stream
+    /// @dev Creates a Lockup Linear stream
     /// See https://docs.sablier.com/concepts/protocol/stream-types#lockup-linear
-    /// @dev See https://docs.sablier.com/contracts/v2/guides/create-stream/lockup-linear
     function _createLinearStream(
         IERC20 asset,
         uint128 totalAmount,
@@ -208,9 +170,8 @@ abstract contract StreamManager is IStreamManager {
         streamId = LOCKUP_LINEAR.createWithTimestamps(params);
     }
 
-    /// @notice Creates a Lockup Tranched stream
+    /// @dev Creates a Lockup Tranched stream
     /// See https://docs.sablier.com/concepts/protocol/stream-types#unlock-monthly
-    /// @dev See https://docs.sablier.com/contracts/v2/guides/create-stream/lockup-linear
     function _createTranchedStream(
         IERC20 asset,
         uint128 totalAmount,
@@ -267,24 +228,61 @@ abstract contract StreamManager is IStreamManager {
         streamId = LOCKUP_TRANCHED.createWithTimestamps(params);
     }
 
-    /// @dev Withdraws the maximum withdrawable amount from either a linear or tranched stream
+    /// @dev See the documentation in {ISablierV2Lockup-withdrawMax}
+    /// Notes:
+    /// - `streamType` parameter has been added to withdraw from the according {ISablierV2Lockup} contract
     function _withdrawStream(
-        ISablierV2Lockup sablier,
+        Types.Method streamType,
         uint256 streamId,
         address to
     ) internal returns (uint128 withdrawnAmount) {
+        // Set the according {ISablierV2Lockup} based on the stream type
+        ISablierV2Lockup sablier = _getISablierV2Lockup(streamType);
+
+        // Withdraw the maximum withdrawable amount
         return sablier.withdrawMax(streamId, to);
     }
 
-    /// @dev Cancels the `streamId` stream
-    function _cancelStream(ISablierV2Lockup sablier, uint256 streamId) internal {
+    /// @dev Withdraws the maximum withdrawable amount and transfers the stream NFT to the new recipient
+    /// Notes:
+    /// - `streamType` parameter has been added to withdraw from the according {ISablierV2Lockup} contract
+    function _withdrawMaxAndTransferStream(
+        Types.Method streamType,
+        uint256 streamId,
+        address newRecipient
+    ) internal returns (uint128 withdrawnAmount) {
+        // Set the according {ISablierV2Lockup} based on the stream type
+        ISablierV2Lockup sablier = _getISablierV2Lockup(streamType);
+
+        // Checks: the caller is the current recipient. This also checks that the NFT was not burned.
+        address currentRecipient = sablier.ownerOf(streamId);
+
+        // Checks, Effects and Interactions: withdraw the maximum withdrawable amount
+        withdrawnAmount = sablier.withdrawMax(streamId, currentRecipient);
+
+        // Interactions: transfer the stream to the new recipient
+        sablier.transferFrom({ from: msg.sender, to: newRecipient, tokenId: streamId });
+    }
+
+    /// @dev See the documentation in {ISablierV2Lockup-cancel}
+    ///
+    /// Notes:
+    /// - `msg.sender` must be the initial stream creator
+    function _cancelStream(Types.Method streamType, uint256 streamId) internal {
+        // Set the according {ISablierV2Lockup} based on the stream type
+        ISablierV2Lockup sablier = _getISablierV2Lockup(streamType);
+
         // Checks: the `msg.sender` is the initial stream creator
         address initialSender = _initialStreamSender[streamId];
         if (msg.sender != initialSender) revert Errors.OnlyInitialStreamSender(initialSender);
 
-        // Cancel the stream
+        // Checks, Effect, Interactions: cancel the stream
         sablier.cancel(streamId);
     }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                            OTHER INTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Transfers the `amount` of `asset` tokens to this address (or the contract inherting from)
     /// and approves either the `SablierV2LockupLinear` or `SablierV2LockupTranched` to spend the amount

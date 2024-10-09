@@ -42,9 +42,8 @@ contract PayInvoice_Integration_Fuzz_Test is PayInvoice_Integration_Shared_Test 
             Helpers.checkFuzzedPaymentMethod(paymentMethod, recurrence, startTime, endTime);
         if (!valid) return;
 
-        // Create a new invoice with a transfer-based payment
+        // Create a new invoice with the fuzzed payment method
         invoice = Types.Invoice({
-            recipient: users.eve,
             status: Types.Status.Pending,
             startTime: startTime,
             endTime: endTime,
@@ -60,10 +59,12 @@ contract PayInvoice_Integration_Fuzz_Test is PayInvoice_Integration_Shared_Test 
 
         // Create the calldata for the {InvoiceModule} execution
         bytes memory data = abi.encodeWithSignature(
-            "createInvoice((address,uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
+            "createInvoice((uint8,uint40,uint40,(uint8,uint8,uint40,address,uint128,uint256)))", invoice
         );
 
-        // Make Eve the caller to create the fuzzed invoice
+        uint256 invoiceId = _nextInvoiceId;
+
+        // Make Eve the caller to create the fuzzed  invoice
         vm.startPrank({ msgSender: users.eve });
 
         // Create the fuzzed invoice
@@ -80,7 +81,7 @@ contract PayInvoice_Integration_Fuzz_Test is PayInvoice_Integration_Shared_Test 
 
         // Store the USDT balances of the payer and recipient before paying the invoice
         uint256 balanceOfPayerBefore = usdt.balanceOf(users.bob);
-        uint256 balanceOfRecipientBefore = usdt.balanceOf(users.eve);
+        uint256 balanceOfRecipientBefore = usdt.balanceOf(address(container));
 
         uint256 streamId = paymentMethod == 0 ? 0 : 1;
         numberOfPayments = numberOfPayments > 0 ? numberOfPayments - 1 : 0;
@@ -92,7 +93,7 @@ contract PayInvoice_Integration_Fuzz_Test is PayInvoice_Integration_Shared_Test 
         // Expect the {InvoicePaid} event to be emitted
         vm.expectEmit();
         emit Events.InvoicePaid({
-            id: 1,
+            id: invoiceId,
             payer: users.bob,
             status: expectedInvoiceStatus,
             payment: Types.Payment({
@@ -106,19 +107,19 @@ contract PayInvoice_Integration_Fuzz_Test is PayInvoice_Integration_Shared_Test 
         });
 
         // Run the test
-        invoiceModule.payInvoice({ id: 1 });
+        invoiceModule.payInvoice({ id: invoiceId });
 
         // Assert the actual and the expected state of the invoice
-        Types.Invoice memory actualInvoice = invoiceModule.getInvoice({ id: 1 });
+        Types.Invoice memory actualInvoice = invoiceModule.getInvoice({ id: invoiceId });
         assertEq(uint8(actualInvoice.status), uint8(expectedInvoiceStatus));
         assertEq(actualInvoice.payment.paymentsLeft, numberOfPayments);
 
         // Assert the actual and expected balances of the payer and recipient
         assertEq(usdt.balanceOf(users.bob), balanceOfPayerBefore - invoice.payment.amount);
         if (invoice.payment.method == Types.Method.Transfer) {
-            assertEq(usdt.balanceOf(users.eve), balanceOfRecipientBefore + invoice.payment.amount);
+            assertEq(usdt.balanceOf(address(container)), balanceOfRecipientBefore + invoice.payment.amount);
         } else {
-            assertEq(usdt.balanceOf(users.eve), balanceOfRecipientBefore);
+            assertEq(usdt.balanceOf(address(container)), balanceOfRecipientBefore);
         }
     }
 }
