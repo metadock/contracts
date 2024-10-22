@@ -73,9 +73,12 @@ contract MockBadContainer is IContainer, AccountCore, ERC1271, ModuleManager {
         address module,
         uint256 value,
         bytes calldata data
-    ) public onlyAdminOrEntrypoint onlyEnabledModule(module) returns (bool success) {
+    ) public onlyAdminOrEntrypoint returns (bool success) {
         // Check and register the smart account on the {DockRegistry} factory if it is not registered yet
         _registerOnFactory();
+
+        // Checks: the `module` module is enabled on the smart account
+        _checkIfModuleIsEnabled(module);
 
         // Execute the call on the `module` contract
         success = _call(module, value, data);
@@ -90,10 +93,18 @@ contract MockBadContainer is IContainer, AccountCore, ERC1271, ModuleManager {
         // Check and register the smart account on the {DockRegistry} factory if it is not registered yet
         _registerOnFactory();
 
-        if (!(modules.length == data.length && modules.length == values.length)) revert Errors.WrongArrayLengths();
+        // Cache the length of the modules array
+        uint256 modulesLength = modules.length;
 
-        // Execute all calls on the provided `modules` contracts
-        for (uint256 i = 0; i < modules.length; i++) {
+        // Checks: all arrays have the same length
+        if (!(modulesLength == data.length && modulesLength == values.length)) revert Errors.WrongArrayLengths();
+
+        // Loop through the calls to execute
+        for (uint256 i; i < modulesLength; ++i) {
+            // Checks: current module is enabled
+            _checkIfModuleIsEnabled(modules[i]);
+
+            // Effects, Interactions: execute all calls on the provided `modules` contracts
             _call(modules[i], values[i], data[i]);
         }
     }

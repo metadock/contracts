@@ -6,7 +6,7 @@ import { Container } from "./../../../../../src/Container.sol";
 import { Errors } from "../../../../utils/Errors.sol";
 import { Events } from "../../../../utils/Events.sol";
 
-contract CreateContainer_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
+contract CreateAccount_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
     function setUp() public virtual override {
         DockRegistry_Unit_Concrete_Test.setUp();
     }
@@ -15,7 +15,7 @@ contract CreateContainer_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
         _;
     }
 
-    function test_CreateContainer_DockIdZero() external whenDockIdZero {
+    function test_CreateAccount_DockIdZero() external whenDockIdZero {
         // The {DockRegistry} contract deploys each new {Container} contract.
         // Therefore, we need to calculate the current nonce of the {DockRegistry}
         // to pre-compute the address of the new {Container} before deployment.
@@ -82,7 +82,7 @@ contract CreateContainer_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
         _;
     }
 
-    function test_CreateContainer_DockIdNonZero() external whenDockIdNonZero whenCallerDockOwner {
+    function test_CreateAccount_DockIdNonZero() external whenDockIdNonZero whenCallerDockOwner {
         // The {DockRegistry} contract deploys each new {Container} contract.
         // Therefore, we need to calculate the current nonce of the {DockRegistry}
         // to pre-compute the address of the new {Container} before deployment.
@@ -110,6 +110,14 @@ contract CreateContainer_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
 
         // Run the test
         dockRegistry.createAccount({ _admin: users.bob, _data: data });
+
+        // Assert if the freshly deployed smart account is registered on the factory
+        bool isRegisteredOnFactory = dockRegistry.isRegistered(expectedContainer);
+        assertTrue(isRegisteredOnFactory);
+
+        // Assert if the initial modules has been enabled on the {Container} smart account instance
+        bool isModuleEnabled = Container(payable(expectedContainer)).isModuleEnabled(mockModules[0]);
+        assertTrue(isModuleEnabled);
 
         // Assert the expected and actual owner of the dock
         address actualOwnerOfDock = dockRegistry.ownerOfDock({ dockId: 1 });

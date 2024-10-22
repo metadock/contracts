@@ -29,7 +29,7 @@ contract Execute_Unit_Concrete_Test is Container_Unit_Concrete_Test {
 
     function test_RevertWhen_ModuleNotEnabled() external whenCallerOwner {
         // Expect the next call to revert with the {ModuleNotEnabled} error
-        vm.expectRevert(Errors.ModuleNotEnabled.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.ModuleNotEnabled.selector, address(0x1)));
 
         // Run the test by trying to execute a module at `0x0000000000000000000000000000000000000001` address
         container.execute({ module: address(0x1), value: 0, data: "" });
