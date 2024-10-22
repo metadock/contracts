@@ -35,6 +35,12 @@ library Errors {
     /// @notice Thrown when the deposited ERC-20 token amount is zero
     error InvalidAssetZeroAmount();
 
+    /// @notice Thrown when `msg.sender` is not an approved target
+    error CallerNotApprovedTarget();
+
+    /// @notice Thrown when the provided `modules`, `values` or `data` arrays have different lengths
+    error WrongArrayLengths();
+
     /*//////////////////////////////////////////////////////////////////////////
                                   MODULE-MANAGER
     //////////////////////////////////////////////////////////////////////////*/

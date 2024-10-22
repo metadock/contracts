@@ -2,7 +2,6 @@
 pragma solidity ^0.8.26;
 
 import { IModuleManager } from "./../interfaces/IModuleManager.sol";
-import { DockRegistry } from "./../DockRegistry.sol";
 import { ModuleKeeper } from "./../ModuleKeeper.sol";
 import { Errors } from "./../libraries/Errors.sol";
 
@@ -14,19 +13,15 @@ abstract contract ModuleManager is IModuleManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IModuleManager
-    DockRegistry public immutable override dockRegistry;
-
-    /// @inheritdoc IModuleManager
     mapping(address module => bool) public override isModuleEnabled;
 
     /*//////////////////////////////////////////////////////////////////////////
-                                    CONSTRUCTOR
+                                    INITIALIZER
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Initializes the {ModuleKeeper} address and initial module(s) enabled on the container
-    constructor(DockRegistry _dockRegistry, address[] memory _initialModules) {
-        dockRegistry = _dockRegistry;
-        _enableBatchModules(_initialModules);
+    /// @dev Initializes the initial module(s) enabled on the container
+    function _initializeModuleManager(ModuleKeeper moduleKeeper, address[] memory _initialModules) internal {
+        _enableBatchModules(moduleKeeper, _initialModules);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -46,30 +41,24 @@ abstract contract ModuleManager is IModuleManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IModuleManager
-    function enableModule(address module) public virtual {
-        _enableModule(module);
-    }
+    function enableModule(address module) public virtual;
 
     /// @inheritdoc IModuleManager
-    function disableModule(address module) public virtual {
-        _disableModule(module);
-    }
+    function disableModule(address module) public virtual;
 
     /*//////////////////////////////////////////////////////////////////////////
                                 INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Enables multiple modules at the same time
-    function _enableBatchModules(address[] memory modules) internal {
+    function _enableBatchModules(ModuleKeeper moduleKeeper, address[] memory modules) internal {
         for (uint256 i; i < modules.length; ++i) {
-            _enableModule(modules[i]);
+            _enableModule(moduleKeeper, modules[i]);
         }
     }
 
     /// @dev Enables one single module at a time
-    function _enableModule(address module) internal {
-        ModuleKeeper moduleKeeper = dockRegistry.moduleKeeper();
-
+    function _enableModule(ModuleKeeper moduleKeeper, address module) internal {
         // Check: module is in the allowlist
         if (!moduleKeeper.isAllowlisted(module)) {
             revert Errors.ModuleNotAllowlisted();
