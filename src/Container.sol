@@ -49,6 +49,8 @@ contract Container is IContainer, AccountCore, ERC1271, ModuleManager {
 
         // Initialize the {Container} smart contract
         super.initialize(_defaultAdmin, _data);
+
+        _registerOnFactory();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -85,9 +87,9 @@ contract Container is IContainer, AccountCore, ERC1271, ModuleManager {
         address module,
         uint256 value,
         bytes calldata data
-    ) public onlyAdminOrEntrypoint onlyEnabledModule(module) returns (bool success) {
-        // Checks: the smart account is registered on the {DockRegistry} factory
-        _registerOnFactory();
+    ) public onlyAdminOrEntrypoint returns (bool success) {
+        // Checks: the `module` module is enabled on the smart account
+        _checkIfModuleIsEnabled(module);
 
         // Effects, Interactions: execute the call on the `module` contract
         success = _call(module, value, data);
@@ -99,14 +101,18 @@ contract Container is IContainer, AccountCore, ERC1271, ModuleManager {
         uint256[] calldata values,
         bytes[] calldata data
     ) external onlyAdminOrEntrypoint {
-        // Checks: the smart account is registered on the {DockRegistry} factory
-        _registerOnFactory();
+        // Cache the length of the modules array
+        uint256 modulesLength = modules.length;
 
         // Checks: all arrays have the same length
-        if (!(modules.length == data.length && modules.length == values.length)) revert Errors.WrongArrayLengths();
+        if (!(modulesLength == data.length && modulesLength == values.length)) revert Errors.WrongArrayLengths();
 
-        // Effects, Interactions: execute all calls on the provided `modules` contracts
-        for (uint256 i = 0; i < modules.length; i++) {
+        // Loop through the calls to execute
+        for (uint256 i; i < modulesLength; ++i) {
+            // Checks: current module is enabled
+            _checkIfModuleIsEnabled(modules[i]);
+
+            // Effects, Interactions: execute all calls on the provided `modules` contracts
             _call(modules[i], values[i], data[i]);
         }
     }
@@ -172,13 +178,16 @@ contract Container is IContainer, AccountCore, ERC1271, ModuleManager {
 
     /// @inheritdoc IModuleManager
     function enableModule(address module) public override onlyAdminOrEntrypoint {
+        // Retrieve the address of the {ModuleKeeper}
         ModuleKeeper moduleKeeper = DockRegistry(factory).moduleKeeper();
 
+        // Checks, Effects: enable the module
         _enableModule(moduleKeeper, module);
     }
 
     /// @inheritdoc IModuleManager
     function disableModule(address module) public override onlyAdminOrEntrypoint {
+        // Effects: disable the module
         _disableModule(module);
     }
 
@@ -197,18 +206,18 @@ contract Container is IContainer, AccountCore, ERC1271, ModuleManager {
         // Recover the signer of the hash
         address signer = targetDigest.recover(_signature);
 
-        // Check: the signer is an admin and return the magic value if so
+        // Checks: the signer is an admin and return the magic value if so
         if (isAdmin(signer)) {
             return MAGICVALUE;
         }
 
-        // Check: either `msg.sender` is an approved target or there are no restrictions for approved targets
+        // Checks: either `msg.sender` is an approved target or there are no restrictions for approved targets
         EnumerableSet.AddressSet storage targets = _accountPermissionsStorage().approvedTargets[signer];
         if (!(targets.contains(msg.sender) || (targets.length() == 1 && targets.at(0) == address(0)))) {
             revert Errors.CallerNotApprovedTarget();
         }
 
-        // Check: the signer is an active signer and return the magic value if so
+        // Checks: the signer is an active signer and return the magic value if so
         if (isActiveSigner(signer)) {
             magicValue = MAGICVALUE;
         }
@@ -281,11 +290,11 @@ contract Container is IContainer, AccountCore, ERC1271, ModuleManager {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Registers the account on the factory if it hasn't been registered yet
-    function _registerOnFactory() internal virtual {
+    function _registerOnFactory() internal {
         // Get the address of the factory contract
         DockRegistry factoryContract = DockRegistry(factory);
 
-        // Check if this smart account is registered in the factory contract
+        // Checks: the smart account is registered on the factory contract
         if (!factoryContract.isRegistered(address(this))) {
             // Otherwise register it
             factoryContract.onRegister(AccountCoreStorage.data().creationSalt);

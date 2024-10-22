@@ -25,18 +25,6 @@ abstract contract ModuleManager is IModuleManager {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                                      MODIFIERS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @dev Reverts if the `module` module is not enabled on the container
-    modifier onlyEnabledModule(address module) {
-        if (!isModuleEnabled[module]) {
-            revert Errors.ModuleNotEnabled();
-        }
-        _;
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -50,6 +38,13 @@ abstract contract ModuleManager is IModuleManager {
                                 INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /// @dev Reverts if the `module` module is not enabled on the container
+    function _checkIfModuleIsEnabled(address module) internal view {
+        if (!isModuleEnabled[module]) {
+            revert Errors.ModuleNotEnabled(module);
+        }
+    }
+
     /// @dev Enables multiple modules at the same time
     function _enableBatchModules(ModuleKeeper moduleKeeper, address[] memory modules) internal {
         for (uint256 i; i < modules.length; ++i) {
@@ -59,12 +54,12 @@ abstract contract ModuleManager is IModuleManager {
 
     /// @dev Enables one single module at a time
     function _enableModule(ModuleKeeper moduleKeeper, address module) internal {
-        // Check: module is in the allowlist
+        // Checks: module is in the allowlist
         if (!moduleKeeper.isAllowlisted(module)) {
             revert Errors.ModuleNotAllowlisted();
         }
 
-        // Effect: enable the module
+        // Effects: enable the module
         isModuleEnabled[module] = true;
 
         // Log the module enablement
@@ -73,7 +68,7 @@ abstract contract ModuleManager is IModuleManager {
 
     /// @dev Disables one single module at a time
     function _disableModule(address module) internal {
-        // Effect: disable the module
+        // Effects: disable the module
         isModuleEnabled[module] = false;
 
         // Log the module disablement

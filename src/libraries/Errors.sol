@@ -46,7 +46,7 @@ library Errors {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Thrown when a {Container} tries to execute a method on a non-enabled module
-    error ModuleNotEnabled();
+    error ModuleNotEnabled(address module);
 
     /// @notice Thrown when an attempt is made to enable a non-allowlisted module on a {Container}
     error ModuleNotAllowlisted();
