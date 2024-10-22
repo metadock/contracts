@@ -40,7 +40,7 @@ library Errors {
     error ERC1155InsufficientBalance(address sender, uint256 balance, uint256 needed, uint256 tokenId);
 
     /*//////////////////////////////////////////////////////////////////////////
-                                  MODULE-MANAGER
+                                MODULE-MANAGER
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Thrown when a {Container} tries to execute a method on a non-enabled module
@@ -50,14 +50,14 @@ library Errors {
     error ModuleNotAllowlisted();
 
     /*//////////////////////////////////////////////////////////////////////////
-                                  MODULE-KEEPER
+                                MODULE-KEEPER
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Thrown when the requested module to be allowlisted is not a valid non-zero code size contract
     error InvalidZeroCodeModule();
 
     /*//////////////////////////////////////////////////////////////////////////
-                                    INVOICE-MODULE
+                                INVOICE-MODULE
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Thrown when the caller is an invalid zero code contract or EOA
@@ -134,4 +134,11 @@ library Errors {
 
     /// @notice Thrown when `msg.sender` is not authorized to perform an operation
     error OwnableUnauthorizedAccount(address account);
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                THIRDWEB - PERMISSIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice The `account` is missing a role.
+    error PermissionsUnauthorizedAccount(address account, bytes32 neededRole);
 }

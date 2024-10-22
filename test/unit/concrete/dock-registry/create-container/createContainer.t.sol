@@ -19,7 +19,8 @@ contract CreateContainer_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
         // The {DockRegistry} contract deploys each new {Container} contract.
         // Therefore, we need to calculate the current nonce of the {DockRegistry}
         // to pre-compute the address of the new {Container} before deployment.
-        address expectedContainer = computeDeploymentAddress({ deployer: address(dockRegistry) });
+        (address expectedContainer, bytes memory data) =
+            computeDeploymentAddressAndCalldata({ deployer: users.bob, dockId: 0, initialModules: mockModules });
 
         // Allowlist the mock modules on the {ModuleKeeper} contract from the admin account
         vm.startPrank({ msgSender: users.admin });
@@ -37,9 +38,11 @@ contract CreateContainer_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
             initialModules: mockModules
         });
 
-        // Run the test
+        // Make Bob the caller in this test suite
         vm.prank({ msgSender: users.bob });
-        dockRegistry.createContainer({ dockId: 0, initialModules: mockModules });
+
+        // Run the test
+        dockRegistry.createAccount({ _admin: users.bob, _data: data });
 
         // Assert the expected and actual owner of the dock
         address actualOwnerOfDock = dockRegistry.ownerOfDock({ dockId: 1 });
@@ -56,24 +59,23 @@ contract CreateContainer_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
 
     modifier whenDockIdNonZero() {
         // Create & deploy a new container with Eve as the owner
-        address[] memory modules = new address[](1);
-        modules[0] = address(mockModule);
-
-        container = deployContainer({ _owner: users.bob, _dockId: 0, _initialModules: modules });
+        container = deployContainer({ _owner: users.bob, _dockId: 0, _initialModules: mockModules });
         _;
     }
 
     function test_RevertWhen_CallerNotDockOwner() external whenDockIdNonZero {
-        // Create a mock modules array
-        address[] memory modules = new address[](1);
-        modules[0] = address(mockModule);
+        // Construct the calldata to be used to initialize the {Container} smart account
+        bytes memory data =
+            computeCreateAccountCalldata({ deployer: users.eve, dockId: 1, initialModules: mockModules });
+
+        // Make Eve the caller in this test suite
+        vm.prank({ msgSender: users.eve });
 
         // Expect the {CallerNotDockOwner} to be emitted
         vm.expectRevert(Errors.CallerNotDockOwner.selector);
 
         // Run the test
-        vm.prank({ msgSender: users.eve });
-        dockRegistry.createContainer({ dockId: 1, initialModules: modules });
+        dockRegistry.createAccount({ _admin: users.bob, _data: data });
     }
 
     modifier whenCallerDockOwner() {
@@ -84,7 +86,8 @@ contract CreateContainer_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
         // The {DockRegistry} contract deploys each new {Container} contract.
         // Therefore, we need to calculate the current nonce of the {DockRegistry}
         // to pre-compute the address of the new {Container} before deployment.
-        address expectedContainer = computeDeploymentAddress({ deployer: address(dockRegistry) });
+        (address expectedContainer, bytes memory data) =
+            computeDeploymentAddressAndCalldata({ deployer: users.bob, dockId: 1, initialModules: mockModules });
 
         // Allowlist the mock modules on the {ModuleKeeper} contract from the admin account
         vm.startPrank({ msgSender: users.admin });
@@ -102,9 +105,11 @@ contract CreateContainer_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
             initialModules: mockModules
         });
 
-        // Run the test
+        // Make Bob the caller in this test suite
         vm.prank({ msgSender: users.bob });
-        dockRegistry.createContainer({ dockId: 1, initialModules: mockModules });
+
+        // Run the test
+        dockRegistry.createAccount({ _admin: users.bob, _data: data });
 
         // Assert the expected and actual owner of the dock
         address actualOwnerOfDock = dockRegistry.ownerOfDock({ dockId: 1 });
