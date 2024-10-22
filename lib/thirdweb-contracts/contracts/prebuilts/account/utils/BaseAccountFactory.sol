@@ -49,7 +49,7 @@ abstract contract BaseAccountFactory is IAccountFactory, Multicall {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Deploys a new Account for admin.
-    function createAccount(address _admin, bytes calldata _data) external virtual override returns (address) {
+    function createAccount(address _admin, bytes calldata _data) public virtual override returns (address) {
         address impl = accountImplementation;
         bytes32 salt = _generateSalt(_admin, _data);
         address account = Clones.predictDeterministicAddress(impl, salt);
