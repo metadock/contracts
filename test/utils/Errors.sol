@@ -13,8 +13,8 @@ library Errors {
                                     CONTAINER
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Thrown when `msg.sender` is not the {Container} contract owner
-    error CallerNotContainerOwner();
+    /// @notice Thrown when `msg.sender` is not the {Workspace} contract owner
+    error CallerNotWorkspaceOwner();
 
     /// @notice Thrown when a native token (ETH) withdrawal fails
     error NativeWithdrawFailed();
@@ -39,32 +39,35 @@ library Errors {
     /// @notice Thrown when the balance of the sender is insufficient to perform an ERC-1155 transfer
     error ERC1155InsufficientBalance(address sender, uint256 balance, uint256 needed, uint256 tokenId);
 
+    /// @notice Thrown when the provided `modules`, `values` or `data` arrays have different lengths
+    error WrongArrayLengths();
+
     /*//////////////////////////////////////////////////////////////////////////
-                                  MODULE-MANAGER
+                                MODULE-MANAGER
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Thrown when a {Container} tries to execute a method on a non-enabled module
-    error ModuleNotEnabled();
+    /// @notice Thrown when a {Workspace} tries to execute a method on a non-enabled module
+    error ModuleNotEnabled(address module);
 
-    /// @notice Thrown when an attempt is made to enable a non-allowlisted module on a {Container}
+    /// @notice Thrown when an attempt is made to enable a non-allowlisted module on a {Workspace}
     error ModuleNotAllowlisted();
 
     /*//////////////////////////////////////////////////////////////////////////
-                                  MODULE-KEEPER
+                                MODULE-KEEPER
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Thrown when the requested module to be allowlisted is not a valid non-zero code size contract
     error InvalidZeroCodeModule();
 
     /*//////////////////////////////////////////////////////////////////////////
-                                    INVOICE-MODULE
+                                INVOICE-MODULE
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Thrown when the caller is an invalid zero code contract or EOA
-    error ContainerZeroCodeSize();
+    error WorkspaceZeroCodeSize();
 
-    /// @notice Thrown when the caller is a contract that does not implement the {IContainer} interface
-    error ContainerUnsupportedInterface();
+    /// @notice Thrown when the caller is a contract that does not implement the {IWorkspace} interface
+    error WorkspaceUnsupportedInterface();
 
     /// @notice Thrown when the end time of an invoice is in the past
     error EndTimeInThePast();
@@ -134,4 +137,11 @@ library Errors {
 
     /// @notice Thrown when `msg.sender` is not authorized to perform an operation
     error OwnableUnauthorizedAccount(address account);
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                THIRDWEB - PERMISSIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice The `account` is missing a role.
+    error PermissionsUnauthorizedAccount(address account, bytes32 neededRole);
 }

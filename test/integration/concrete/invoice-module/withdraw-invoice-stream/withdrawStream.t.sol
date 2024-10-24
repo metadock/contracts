@@ -27,21 +27,21 @@ contract WithdrawLinearStream_Integration_Concret_Test is WithdrawLinearStream_I
         // Advance the timestamp by 5 weeks to simulate the withdrawal
         vm.warp(block.timestamp + 5 weeks);
 
-        // Store Eve's container balance before withdrawing the USDT tokens
-        uint256 balanceOfBefore = usdt.balanceOf(address(container));
+        // Store Eve's workspace balance before withdrawing the USDT tokens
+        uint256 balanceOfBefore = usdt.balanceOf(address(workspace));
 
         // Get the maximum withdrawable amount from the stream
         uint128 maxWithdrawableAmount =
             invoiceModule.withdrawableAmountOf({ streamType: Types.Method.LinearStream, streamId: streamId });
 
-        // Make Eve's container the caller in this test suite as his container is the recipient of the invoice
-        vm.startPrank({ msgSender: address(container) });
+        // Make Eve's workspace the caller in this test suite as his workspace is the recipient of the invoice
+        vm.startPrank({ msgSender: address(workspace) });
 
         // Run the test
         invoiceModule.withdrawInvoiceStream(invoiceId);
 
         // Assert the current and expected USDT balance of Eve
-        assertEq(balanceOfBefore + maxWithdrawableAmount, usdt.balanceOf(address(container)));
+        assertEq(balanceOfBefore + maxWithdrawableAmount, usdt.balanceOf(address(workspace)));
     }
 
     function test_WithdrawStream_TranchedStream() external givenPaymentMethodTranchedStream givenInvoiceStatusOngoing {
@@ -62,20 +62,20 @@ contract WithdrawLinearStream_Integration_Concret_Test is WithdrawLinearStream_I
         // Advance the timestamp by 5 weeks to simulate the withdrawal
         vm.warp(block.timestamp + 5 weeks);
 
-        // Store Eve's container balance before withdrawing the USDT tokens
-        uint256 balanceOfBefore = usdt.balanceOf(address(container));
+        // Store Eve's workspace balance before withdrawing the USDT tokens
+        uint256 balanceOfBefore = usdt.balanceOf(address(workspace));
 
         // Get the maximum withdrawable amount from the stream
         uint128 maxWithdrawableAmount =
             invoiceModule.withdrawableAmountOf({ streamType: Types.Method.TranchedStream, streamId: streamId });
 
-        // Make Eve's container the caller in this test suite as her container is the owner of the invoice
-        vm.startPrank({ msgSender: address(container) });
+        // Make Eve's workspace the caller in this test suite as her workspace is the owner of the invoice
+        vm.startPrank({ msgSender: address(workspace) });
 
         // Run the test
         invoiceModule.withdrawInvoiceStream(invoiceId);
 
-        // Assert the current and expected USDT balance of Eve's container
-        assertEq(balanceOfBefore + maxWithdrawableAmount, usdt.balanceOf(address(container)));
+        // Assert the current and expected USDT balance of Eve's workspace
+        assertEq(balanceOfBefore + maxWithdrawableAmount, usdt.balanceOf(address(workspace)));
     }
 }

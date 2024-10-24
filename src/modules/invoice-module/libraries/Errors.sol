@@ -9,10 +9,10 @@ library Errors {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Thrown when the caller is an invalid zero code contract or EOA
-    error ContainerZeroCodeSize();
+    error WorkspaceZeroCodeSize();
 
-    /// @notice Thrown when the caller is a contract that does not implement the {IContainer} interface
-    error ContainerUnsupportedInterface();
+    /// @notice Thrown when the caller is a contract that does not implement the {IWorkspace} interface
+    error WorkspaceUnsupportedInterface();
 
     /// @notice Thrown when the end time of an invoice is in the past
     error EndTimeInThePast();

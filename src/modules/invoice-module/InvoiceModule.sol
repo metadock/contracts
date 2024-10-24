@@ -11,7 +11,7 @@ import { ISablierV2LockupTranched } from "@sablier/v2-core/src/interfaces/ISabli
 import { Types } from "./libraries/Types.sol";
 import { Errors } from "./libraries/Errors.sol";
 import { IInvoiceModule } from "./interfaces/IInvoiceModule.sol";
-import { IContainer } from "./../../interfaces/IContainer.sol";
+import { IWorkspace } from "./../../interfaces/IWorkspace.sol";
 import { StreamManager } from "./sablier-v2/StreamManager.sol";
 import { Helpers } from "./libraries/Helpers.sol";
 
@@ -59,16 +59,16 @@ contract InvoiceModule is IInvoiceModule, StreamManager, ERC721 {
                                       MODIFIERS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Allow only calls from contracts implementing the {IContainer} interface
-    modifier onlyContainer() {
+    /// @dev Allow only calls from contracts implementing the {IWorkspace} interface
+    modifier onlyWorkspace() {
         // Checks: the sender is a valid non-zero code size contract
         if (msg.sender.code.length == 0) {
-            revert Errors.ContainerZeroCodeSize();
+            revert Errors.WorkspaceZeroCodeSize();
         }
 
-        // Checks: the sender implements the ERC-165 interface required by {IContainer}
-        bytes4 interfaceId = type(IContainer).interfaceId;
-        if (!IContainer(msg.sender).supportsInterface(interfaceId)) revert Errors.ContainerUnsupportedInterface();
+        // Checks: the sender implements the ERC-165 interface required by {IWorkspace}
+        bytes4 interfaceId = type(IWorkspace).interfaceId;
+        if (!IWorkspace(msg.sender).supportsInterface(interfaceId)) revert Errors.WorkspaceUnsupportedInterface();
         _;
     }
 
@@ -86,7 +86,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager, ERC721 {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IInvoiceModule
-    function createInvoice(Types.Invoice calldata invoice) external onlyContainer returns (uint256 invoiceId) {
+    function createInvoice(Types.Invoice calldata invoice) external onlyWorkspace returns (uint256 invoiceId) {
         // Checks: the amount is non-zero
         if (invoice.payment.amount == 0) {
             revert Errors.ZeroPaymentAmount();
@@ -166,7 +166,7 @@ contract InvoiceModule is IInvoiceModule, StreamManager, ERC721 {
             ++_nextInvoiceId;
         }
 
-        // Effects: mint the invoice NFT to the recipient container
+        // Effects: mint the invoice NFT to the recipient workspace
         _mint({ to: msg.sender, tokenId: invoiceId });
 
         // Log the invoice creation

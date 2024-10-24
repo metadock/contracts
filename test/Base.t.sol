@@ -5,16 +5,17 @@ import { Events } from "./utils/Events.sol";
 import { Users } from "./utils/Types.sol";
 import { Test } from "forge-std/Test.sol";
 import { MockERC20NoReturn } from "./mocks/MockERC20NoReturn.sol";
-import { MockNonCompliantContainer } from "./mocks/MockNonCompliantContainer.sol";
+import { MockNonCompliantWorkspace } from "./mocks/MockNonCompliantWorkspace.sol";
 import { MockModule } from "./mocks/MockModule.sol";
 import { MockBadReceiver } from "./mocks/MockBadReceiver.sol";
-import { Container } from "./../src/Container.sol";
+import { Workspace } from "./../src/Workspace.sol";
 import { ModuleKeeper } from "./../src/ModuleKeeper.sol";
 import { DockRegistry } from "./../src/DockRegistry.sol";
-import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { EntryPoint } from "@thirdweb/contracts/prebuilts/account/utils/Entrypoint.sol";
 import { MockERC721Collection } from "./mocks/MockERC721Collection.sol";
 import { MockERC1155Collection } from "./mocks/MockERC1155Collection.sol";
-import { MockBadContainer } from "./mocks/MockBadContainer.sol";
+import { MockBadWorkspace } from "./mocks/MockBadWorkspace.sol";
+import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
 
 abstract contract Base_Test is Test, Events {
     /*//////////////////////////////////////////////////////////////////////////
@@ -27,12 +28,13 @@ abstract contract Base_Test is Test, Events {
                                    TEST CONTRACTS
     //////////////////////////////////////////////////////////////////////////*/
 
+    EntryPoint internal entrypoint;
     DockRegistry internal dockRegistry;
-    Container internal container;
+    Workspace internal workspace;
     ModuleKeeper internal moduleKeeper;
     MockERC20NoReturn internal usdt;
     MockModule internal mockModule;
-    MockNonCompliantContainer internal mockNonCompliantContainer;
+    MockNonCompliantWorkspace internal mockNonCompliantWorkspace;
     MockBadReceiver internal mockBadReceiver;
     MockERC721Collection internal mockERC721;
     MockERC1155Collection internal mockERC1155;
@@ -42,6 +44,7 @@ abstract contract Base_Test is Test, Events {
     //////////////////////////////////////////////////////////////////////////*/
 
     address[] internal mockModules;
+    address internal containerImplementation;
 
     /*//////////////////////////////////////////////////////////////////////////
                                   SET-UP FUNCTION
@@ -55,14 +58,14 @@ abstract contract Base_Test is Test, Events {
         users = Users({ admin: createUser("admin"), eve: createUser("eve"), bob: createUser("bob") });
 
         // Deploy test contracts
+        entrypoint = new EntryPoint();
         moduleKeeper = new ModuleKeeper({ _initialOwner: users.admin });
 
-        address implementation = address(new DockRegistry());
-        bytes memory data = abi.encodeWithSelector(DockRegistry.initialize.selector, users.admin, moduleKeeper);
-        dockRegistry = DockRegistry(address(new ERC1967Proxy(implementation, data)));
+        dockRegistry = new DockRegistry(users.admin, entrypoint, moduleKeeper);
+        containerImplementation = address(new Workspace(entrypoint, address(dockRegistry)));
 
         mockModule = new MockModule();
-        mockNonCompliantContainer = new MockNonCompliantContainer({ _owner: users.admin });
+        mockNonCompliantWorkspace = new MockNonCompliantWorkspace({ _owner: users.admin });
         mockBadReceiver = new MockBadReceiver();
         mockERC721 = new MockERC721Collection("MockERC721Collection", "MC");
         mockERC1155 = new MockERC1155Collection("https://nft.com/0x1.json");
@@ -71,49 +74,55 @@ abstract contract Base_Test is Test, Events {
         mockModules.push(address(mockModule));
 
         // Label the test contracts so we can easily track them
+        vm.label({ account: address(dockRegistry), newLabel: "DockRegistry" });
+        vm.label({ account: address(entrypoint), newLabel: "EntryPoint" });
+        vm.label({ account: address(moduleKeeper), newLabel: "ModuleKeeper" });
         vm.label({ account: address(usdt), newLabel: "USDT" });
         vm.label({ account: address(mockModule), newLabel: "MockModule" });
-        vm.label({ account: address(mockNonCompliantContainer), newLabel: "MockNonCompliantContainer" });
+        vm.label({ account: address(mockNonCompliantWorkspace), newLabel: "MockNonCompliantWorkspace" });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
                             DEPLOYMENT-RELATED FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Deploys a new {Container} contract based on the provided `owner`, `moduleKeeper` and `initialModules` input params
-    function deployContainer(
+    /// @dev Deploys a new {Workspace} smart account based on the provided `owner`, `moduleKeeper` and `initialModules` input params
+    function deployWorkspace(
         address _owner,
         uint256 _dockId,
         address[] memory _initialModules
-    ) internal returns (Container _container) {
+    ) internal returns (Workspace _container) {
         vm.startPrank({ msgSender: users.admin });
         for (uint256 i; i < _initialModules.length; ++i) {
             allowlistModule(_initialModules[i]);
         }
         vm.stopPrank();
 
+        bytes memory data =
+            computeCreateAccountCalldata({ deployer: _owner, dockId: _dockId, initialModules: _initialModules });
+
         vm.prank({ msgSender: _owner });
-        _container =
-            Container(payable(dockRegistry.createContainer({ dockId: _dockId, initialModules: _initialModules })));
+        _container = Workspace(payable(dockRegistry.createAccount({ _admin: _owner, _data: data })));
         vm.stopPrank();
     }
 
-    /// @dev Deploys a new {MockBadContainer} contract based on the provided `owner`, `moduleKeeper` and `initialModules` input params
-    function deployBadContainer(
+    /// @dev Deploys a new {MockBadWorkspace} smart account based on the provided `owner`, `moduleKeeper` and `initialModules` input params
+    function deployBadWorkspace(
         address _owner,
         uint256 _dockId,
         address[] memory _initialModules
-    ) internal returns (MockBadContainer _container) {
+    ) internal returns (MockBadWorkspace _badWorkspace) {
         vm.startPrank({ msgSender: users.admin });
         for (uint256 i; i < _initialModules.length; ++i) {
             allowlistModule(_initialModules[i]);
         }
         vm.stopPrank();
 
+        bytes memory data =
+            computeCreateAccountCalldata({ deployer: _owner, dockId: _dockId, initialModules: _initialModules });
+
         vm.prank({ msgSender: _owner });
-        _container = MockBadContainer(
-            payable(dockRegistry.createContainer({ dockId: _dockId, initialModules: _initialModules }))
-        );
+        _badWorkspace = MockBadWorkspace(payable(dockRegistry.createAccount({ _admin: _owner, _data: data })));
         vm.stopPrank();
     }
 
@@ -135,11 +144,34 @@ abstract contract Base_Test is Test, Events {
     }
 
     /// @dev Predicts the address of the next contract that is going to be deployed by the `deployer`
-    function computeDeploymentAddress(address deployer) internal view returns (address expectedAddress) {
-        // Calculate the current nonce of the deployer account
-        uint256 deployerNonce = vm.getNonce({ account: address(deployer) });
+    /// and constructs the calldata to be used to create the new smart account
+    function computeDeploymentAddressAndCalldata(
+        address deployer,
+        uint256 dockId,
+        address[] memory initialModules
+    ) internal view returns (address expectedAddress, bytes memory data) {
+        data = computeCreateAccountCalldata(deployer, dockId, initialModules);
 
-        // Pre-compute the address of the next contract to be deployed
-        expectedAddress = vm.computeCreateAddress({ deployer: address(deployer), nonce: deployerNonce });
+        // Compute the final salt made by the deployer address and initialization data
+        bytes32 salt = keccak256(abi.encode(deployer, data));
+
+        // Use {Clones} library to predict the smart account address based on the smart account implementation, salt and account factory
+        expectedAddress =
+            Clones.predictDeterministicAddress(dockRegistry.accountImplementation(), salt, address(dockRegistry));
+    }
+
+    /// @dev Constructs the calldata passed to the {DockRegistry}.createAccount method
+    function computeCreateAccountCalldata(
+        address deployer,
+        uint256 dockId,
+        address[] memory initialModules
+    ) internal view returns (bytes memory data) {
+        // Get the total account deployed by `deployer` and use it as a unique salt field
+        // because a signer must be able to deploy multiple smart accounts within one
+        // dock with the same initial modules
+        uint256 totalAccountsOfDeployer = dockRegistry.totalAccountsOfSigner(deployer);
+
+        // Construct the calldata to be used to initialize the {Workspace} smart account
+        data = abi.encode(totalAccountsOfDeployer, dockId, initialModules);
     }
 }
