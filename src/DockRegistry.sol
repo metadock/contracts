@@ -7,7 +7,7 @@ import { PermissionsEnumerable } from "@thirdweb/contracts/extension/Permissions
 import { EnumerableSet } from "@thirdweb/contracts/external-deps/openzeppelin/utils/structs/EnumerableSet.sol";
 
 import { IDockRegistry } from "./interfaces/IDockRegistry.sol";
-import { Container } from "./Container.sol";
+import { Workspace } from "./Workspace.sol";
 import { ModuleKeeper } from "./ModuleKeeper.sol";
 import { Errors } from "./libraries/Errors.sol";
 
@@ -28,10 +28,10 @@ contract DockRegistry is IDockRegistry, BaseAccountFactory, PermissionsEnumerabl
     mapping(uint256 dockId => address owner) public override ownerOfDock;
 
     /// @inheritdoc IDockRegistry
-    mapping(address container => uint256 dockId) public override dockIdOfContainer;
+    mapping(address workspace => uint256 dockId) public override dockIdOfWorkspace;
 
     /// @inheritdoc IDockRegistry
-    mapping(address container => address owner) public override ownerOfContainer;
+    mapping(address workspace => address owner) public override ownerOfWorkspace;
 
     /// @dev Counter to keep track of the next dock ID
     uint256 private _dockNextId;
@@ -40,12 +40,12 @@ contract DockRegistry is IDockRegistry, BaseAccountFactory, PermissionsEnumerabl
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Initializes the {Container} implementation, the Entrypoint, registry admin and sets first dock ID to 1
+    /// @dev Initializes the {Workspace} implementation, the Entrypoint, registry admin and sets first dock ID to 1
     constructor(
         address _initialAdmin,
         IEntryPoint _entrypoint,
         ModuleKeeper _moduleKeeper
-    ) BaseAccountFactory(address(new Container(_entrypoint, address(this))), address(_entrypoint)) {
+    ) BaseAccountFactory(address(new Workspace(_entrypoint, address(this))), address(_entrypoint)) {
         _setupRole(DEFAULT_ADMIN_ROLE, _initialAdmin);
 
         _dockNextId = 1;
@@ -56,6 +56,7 @@ contract DockRegistry is IDockRegistry, BaseAccountFactory, PermissionsEnumerabl
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /// @notice Deploys a new {Workspace} smart account
     function createAccount(address _admin, bytes calldata _data) public override returns (address) {
         // Get the dock ID and initial modules array from the calldata
         // Note: calldata contains a salt (usually the number of accounts created by an admin),
@@ -82,28 +83,28 @@ contract DockRegistry is IDockRegistry, BaseAccountFactory, PermissionsEnumerabl
             }
         }
 
-        // Interactions: deploy a new {Container} smart account
-        address container = super.createAccount(_admin, _data);
+        // Interactions: deploy a new {Workspace} smart account
+        address workspace = super.createAccount(_admin, _data);
 
-        // Assign the ID of the dock to which the new container belongs
-        dockIdOfContainer[container] = dockId;
+        // Assign the ID of the dock to which the new workspace belongs
+        dockIdOfWorkspace[workspace] = dockId;
 
-        // Assign the owner of the container
-        ownerOfContainer[container] = _admin;
+        // Assign the owner of the workspace
+        ownerOfWorkspace[workspace] = _admin;
 
-        // Log the {Container} creation
-        emit ContainerCreated(_admin, dockId, container, initialModules);
+        // Log the {Workspace} creation
+        emit WorkspaceCreated(_admin, dockId, workspace, initialModules);
 
-        // Return {Container} smart account address
-        return container;
+        // Return {Workspace} smart account address
+        return workspace;
     }
 
     /// @inheritdoc IDockRegistry
-    function transferContainerOwnership(address container, address newOwner) external {
-        // Checks: `msg.sender` is the current owner of the {Container}
-        address currentOwner = ownerOfContainer[container];
+    function transferWorkspaceOwnership(address workspace, address newOwner) external {
+        // Checks: `msg.sender` is the current owner of the {Workspace}
+        address currentOwner = ownerOfWorkspace[workspace];
         if (msg.sender != currentOwner) {
-            revert Errors.CallerNotContainerOwner();
+            revert Errors.CallerNotWorkspaceOwner();
         }
 
         // Checks: the new owner is not the zero address
@@ -111,11 +112,11 @@ contract DockRegistry is IDockRegistry, BaseAccountFactory, PermissionsEnumerabl
             revert Errors.InvalidOwnerZeroAddress();
         }
 
-        // Effects: update container's ownership
-        ownerOfContainer[container] = newOwner;
+        // Effects: update workspace's ownership
+        ownerOfWorkspace[workspace] = newOwner;
 
         // Log the ownership transfer
-        emit ContainerOwnershipTransferred({ container: container, oldOwner: currentOwner, newOwner: newOwner });
+        emit WorkspaceOwnershipTransferred({ workspace: workspace, oldOwner: currentOwner, newOwner: newOwner });
     }
 
     /// @inheritdoc IDockRegistry
@@ -157,6 +158,6 @@ contract DockRegistry is IDockRegistry, BaseAccountFactory, PermissionsEnumerabl
 
     /// @dev Called in `createAccount`. Initializes the account contract created in `createAccount`.
     function _initializeAccount(address _account, address _admin, bytes calldata _data) internal override {
-        Container(payable(_account)).initialize(_admin, _data);
+        Workspace(payable(_account)).initialize(_admin, _data);
     }
 }

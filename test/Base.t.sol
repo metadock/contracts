@@ -5,16 +5,16 @@ import { Events } from "./utils/Events.sol";
 import { Users } from "./utils/Types.sol";
 import { Test } from "forge-std/Test.sol";
 import { MockERC20NoReturn } from "./mocks/MockERC20NoReturn.sol";
-import { MockNonCompliantContainer } from "./mocks/MockNonCompliantContainer.sol";
+import { MockNonCompliantWorkspace } from "./mocks/MockNonCompliantWorkspace.sol";
 import { MockModule } from "./mocks/MockModule.sol";
 import { MockBadReceiver } from "./mocks/MockBadReceiver.sol";
-import { Container } from "./../src/Container.sol";
+import { Workspace } from "./../src/Workspace.sol";
 import { ModuleKeeper } from "./../src/ModuleKeeper.sol";
 import { DockRegistry } from "./../src/DockRegistry.sol";
 import { EntryPoint } from "@thirdweb/contracts/prebuilts/account/utils/Entrypoint.sol";
 import { MockERC721Collection } from "./mocks/MockERC721Collection.sol";
 import { MockERC1155Collection } from "./mocks/MockERC1155Collection.sol";
-import { MockBadContainer } from "./mocks/MockBadContainer.sol";
+import { MockBadWorkspace } from "./mocks/MockBadWorkspace.sol";
 import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
 
 abstract contract Base_Test is Test, Events {
@@ -30,11 +30,11 @@ abstract contract Base_Test is Test, Events {
 
     EntryPoint internal entrypoint;
     DockRegistry internal dockRegistry;
-    Container internal container;
+    Workspace internal workspace;
     ModuleKeeper internal moduleKeeper;
     MockERC20NoReturn internal usdt;
     MockModule internal mockModule;
-    MockNonCompliantContainer internal mockNonCompliantContainer;
+    MockNonCompliantWorkspace internal mockNonCompliantWorkspace;
     MockBadReceiver internal mockBadReceiver;
     MockERC721Collection internal mockERC721;
     MockERC1155Collection internal mockERC1155;
@@ -62,10 +62,10 @@ abstract contract Base_Test is Test, Events {
         moduleKeeper = new ModuleKeeper({ _initialOwner: users.admin });
 
         dockRegistry = new DockRegistry(users.admin, entrypoint, moduleKeeper);
-        containerImplementation = address(new Container(entrypoint, address(dockRegistry)));
+        containerImplementation = address(new Workspace(entrypoint, address(dockRegistry)));
 
         mockModule = new MockModule();
-        mockNonCompliantContainer = new MockNonCompliantContainer({ _owner: users.admin });
+        mockNonCompliantWorkspace = new MockNonCompliantWorkspace({ _owner: users.admin });
         mockBadReceiver = new MockBadReceiver();
         mockERC721 = new MockERC721Collection("MockERC721Collection", "MC");
         mockERC1155 = new MockERC1155Collection("https://nft.com/0x1.json");
@@ -79,19 +79,19 @@ abstract contract Base_Test is Test, Events {
         vm.label({ account: address(moduleKeeper), newLabel: "ModuleKeeper" });
         vm.label({ account: address(usdt), newLabel: "USDT" });
         vm.label({ account: address(mockModule), newLabel: "MockModule" });
-        vm.label({ account: address(mockNonCompliantContainer), newLabel: "MockNonCompliantContainer" });
+        vm.label({ account: address(mockNonCompliantWorkspace), newLabel: "MockNonCompliantWorkspace" });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
                             DEPLOYMENT-RELATED FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Deploys a new {Container} smart account based on the provided `owner`, `moduleKeeper` and `initialModules` input params
-    function deployContainer(
+    /// @dev Deploys a new {Workspace} smart account based on the provided `owner`, `moduleKeeper` and `initialModules` input params
+    function deployWorkspace(
         address _owner,
         uint256 _dockId,
         address[] memory _initialModules
-    ) internal returns (Container _container) {
+    ) internal returns (Workspace _container) {
         vm.startPrank({ msgSender: users.admin });
         for (uint256 i; i < _initialModules.length; ++i) {
             allowlistModule(_initialModules[i]);
@@ -102,16 +102,16 @@ abstract contract Base_Test is Test, Events {
             computeCreateAccountCalldata({ deployer: _owner, dockId: _dockId, initialModules: _initialModules });
 
         vm.prank({ msgSender: _owner });
-        _container = Container(payable(dockRegistry.createAccount({ _admin: _owner, _data: data })));
+        _container = Workspace(payable(dockRegistry.createAccount({ _admin: _owner, _data: data })));
         vm.stopPrank();
     }
 
-    /// @dev Deploys a new {MockBadContainer} smart account based on the provided `owner`, `moduleKeeper` and `initialModules` input params
-    function deployBadContainer(
+    /// @dev Deploys a new {MockBadWorkspace} smart account based on the provided `owner`, `moduleKeeper` and `initialModules` input params
+    function deployBadWorkspace(
         address _owner,
         uint256 _dockId,
         address[] memory _initialModules
-    ) internal returns (MockBadContainer _badContainer) {
+    ) internal returns (MockBadWorkspace _badWorkspace) {
         vm.startPrank({ msgSender: users.admin });
         for (uint256 i; i < _initialModules.length; ++i) {
             allowlistModule(_initialModules[i]);
@@ -122,7 +122,7 @@ abstract contract Base_Test is Test, Events {
             computeCreateAccountCalldata({ deployer: _owner, dockId: _dockId, initialModules: _initialModules });
 
         vm.prank({ msgSender: _owner });
-        _badContainer = MockBadContainer(payable(dockRegistry.createAccount({ _admin: _owner, _data: data })));
+        _badWorkspace = MockBadWorkspace(payable(dockRegistry.createAccount({ _admin: _owner, _data: data })));
         vm.stopPrank();
     }
 
@@ -171,7 +171,7 @@ abstract contract Base_Test is Test, Events {
         // dock with the same initial modules
         uint256 totalAccountsOfDeployer = dockRegistry.totalAccountsOfSigner(deployer);
 
-        // Construct the calldata to be used to initialize the {Container} smart account
+        // Construct the calldata to be used to initialize the {Workspace} smart account
         data = abi.encode(totalAccountsOfDeployer, dockId, initialModules);
     }
 }

@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import { DockRegistry_Unit_Concrete_Test } from "../DockRegistry.t.sol";
 import { MockModule } from "../../../../mocks/MockModule.sol";
-import { Container } from "./../../../../../src/Container.sol";
+import { Workspace } from "./../../../../../src/Workspace.sol";
 import { Events } from "../../../../utils/Events.sol";
 import { Errors } from "../../../../utils/Errors.sol";
 
@@ -13,11 +13,11 @@ contract TransferDockOwnership_Unit_Concrete_Test is DockRegistry_Unit_Concrete_
     }
 
     modifier givenDockCreated() {
-        // Create a new dock by creating & deploying a new container
+        // Create a new dock by creating & deploying a new workspace
         address[] memory modules = new address[](1);
         modules[0] = address(mockModule);
 
-        container = deployContainer({ _owner: users.eve, _dockId: 0, _initialModules: modules });
+        workspace = deployWorkspace({ _owner: users.eve, _dockId: 0, _initialModules: modules });
         _;
     }
 
