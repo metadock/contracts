@@ -19,12 +19,6 @@ interface IDockRegistry {
     /// @param initialModules Array of initially enabled modules
     event WorkspaceCreated(address indexed owner, uint256 indexed dockId, address workspace, address[] initialModules);
 
-    /// @notice Emitted when the ownership of a {Workspace} is transferred to a new owner
-    /// @param workspace The address of the {Workspace}
-    /// @param oldOwner The address of the current owner
-    /// @param newOwner The address of the new owner
-    event WorkspaceOwnershipTransferred(address indexed workspace, address oldOwner, address newOwner);
-
     /// @notice Emitted when the ownership of a {Dock} is transferred to a new owner
     /// @param dockId The address of the {Dock}
     /// @param oldOwner The address of the current owner
@@ -48,8 +42,8 @@ interface IDockRegistry {
     /// @notice Retrieves the dock ID of the given workspace address
     function dockIdOfWorkspace(address workspace) external view returns (uint256);
 
-    /// @notice Retrieves the owner address of the {Workspace}'s address
-    function ownerOfWorkspace(address workspace) external view returns (address);
+    /// @notice Retrieves the total number of accounts created by the `signer` address
+    function totalAccountsOfSigner(address signer) external view returns (uint256);
 
     /*//////////////////////////////////////////////////////////////////////////
                                 NON-CONSTANT FUNCTIONS
@@ -63,19 +57,9 @@ interface IDockRegistry {
     /// Requirements:
     /// - `msg.sender` MUST be the dock owner if a new workspace is to be attached to an existing dock
     ///
-    /// @param dockId The ID of the dock to attach the {Workspace} to
-    /// @param initialModules Array of initially enabled modules
-    /*     function createWorkspace(uint256 dockId, address[] memory initialModules) external returns (address workspace);
-    */
-    /// @notice Transfers the ownership of the `workspace` workspace
-    ///
-    /// Requirements:
-    /// - reverts if `msg.sender` is not the current {Workspace} owner
-    /// - reverts if `newOwner` is the zero-address
-    ///
-    /// @param workspace The address of the {Workspace} instance whose ownership is to be transferred
-    /// @param newOwner The address of the new owner
-    function transferWorkspaceOwnership(address workspace, address newOwner) external;
+    /// @param _admin The ID of the dock to attach the {Workspace} to
+    /// @param _data Array of initially enabled modules
+    function createAccount(address _admin, bytes calldata _data) external returns (address workspace);
 
     /// @notice Transfers the ownership of the `dockId` dock
     ///

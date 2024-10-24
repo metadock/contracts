@@ -13,7 +13,6 @@ import { Errors } from "./libraries/Errors.sol";
 
 /// @title DockRegistry
 /// @notice See the documentation in {IDockRegistry}
-
 contract DockRegistry is IDockRegistry, BaseAccountFactory, PermissionsEnumerable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -29,9 +28,6 @@ contract DockRegistry is IDockRegistry, BaseAccountFactory, PermissionsEnumerabl
 
     /// @inheritdoc IDockRegistry
     mapping(address workspace => uint256 dockId) public override dockIdOfWorkspace;
-
-    /// @inheritdoc IDockRegistry
-    mapping(address workspace => address owner) public override ownerOfWorkspace;
 
     /// @dev Counter to keep track of the next dock ID
     uint256 private _dockNextId;
@@ -56,8 +52,11 @@ contract DockRegistry is IDockRegistry, BaseAccountFactory, PermissionsEnumerabl
                                 NON-CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Deploys a new {Workspace} smart account
-    function createAccount(address _admin, bytes calldata _data) public override returns (address) {
+    /// @inheritdoc IDockRegistry
+    function createAccount(
+        address _admin,
+        bytes calldata _data
+    ) public override(BaseAccountFactory, IDockRegistry) returns (address) {
         // Get the dock ID and initial modules array from the calldata
         // Note: calldata contains a salt (usually the number of accounts created by an admin),
         // dock ID and an array with the initial enabled modules on the account
@@ -89,34 +88,11 @@ contract DockRegistry is IDockRegistry, BaseAccountFactory, PermissionsEnumerabl
         // Assign the ID of the dock to which the new workspace belongs
         dockIdOfWorkspace[workspace] = dockId;
 
-        // Assign the owner of the workspace
-        ownerOfWorkspace[workspace] = _admin;
-
         // Log the {Workspace} creation
         emit WorkspaceCreated(_admin, dockId, workspace, initialModules);
 
         // Return {Workspace} smart account address
         return workspace;
-    }
-
-    /// @inheritdoc IDockRegistry
-    function transferWorkspaceOwnership(address workspace, address newOwner) external {
-        // Checks: `msg.sender` is the current owner of the {Workspace}
-        address currentOwner = ownerOfWorkspace[workspace];
-        if (msg.sender != currentOwner) {
-            revert Errors.CallerNotWorkspaceOwner();
-        }
-
-        // Checks: the new owner is not the zero address
-        if (newOwner == address(0)) {
-            revert Errors.InvalidOwnerZeroAddress();
-        }
-
-        // Effects: update workspace's ownership
-        ownerOfWorkspace[workspace] = newOwner;
-
-        // Log the ownership transfer
-        emit WorkspaceOwnershipTransferred({ workspace: workspace, oldOwner: currentOwner, newOwner: newOwner });
     }
 
     /// @inheritdoc IDockRegistry
@@ -147,7 +123,7 @@ contract DockRegistry is IDockRegistry, BaseAccountFactory, PermissionsEnumerabl
                                 CONSTANT FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Returns the total number of accounts created by the `signer` address
+    /// @inheritdoc IDockRegistry
     function totalAccountsOfSigner(address signer) public view returns (uint256) {
         return accountsOfSigner[signer].length();
     }

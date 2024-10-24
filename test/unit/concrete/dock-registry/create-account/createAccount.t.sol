@@ -48,10 +48,6 @@ contract CreateAccount_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
         address actualOwnerOfDock = dockRegistry.ownerOfDock({ dockId: 1 });
         assertEq(users.bob, actualOwnerOfDock);
 
-        // Assert the expected and actual owner of the {Workspace}
-        address actualOwnerOfWorkspace = dockRegistry.ownerOfWorkspace({ workspace: expectedWorkspace });
-        assertEq(users.bob, actualOwnerOfWorkspace);
-
         // Assert the expected and actual dock ID of the {Workspace}
         uint256 actualDockIdOfWorkspace = dockRegistry.dockIdOfWorkspace({ workspace: expectedWorkspace });
         assertEq(1, actualDockIdOfWorkspace);
@@ -122,10 +118,6 @@ contract CreateAccount_Unit_Concrete_Test is DockRegistry_Unit_Concrete_Test {
         // Assert the expected and actual owner of the dock
         address actualOwnerOfDock = dockRegistry.ownerOfDock({ dockId: 1 });
         assertEq(users.bob, actualOwnerOfDock);
-
-        // Assert the expected and actual owner of the {Workspace}
-        address actualOwnerOfWorkspace = dockRegistry.ownerOfWorkspace({ workspace: expectedWorkspace });
-        assertEq(users.bob, actualOwnerOfWorkspace);
 
         // Assert the expected and actual dock ID of the {Workspace}
         uint256 actualDockIdOfWorkspace = dockRegistry.dockIdOfWorkspace({ workspace: expectedWorkspace });
